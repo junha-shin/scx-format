@@ -14,7 +14,7 @@
   "python": "3.12.14",
   "platform": "Windows-11-10.0.26100-SP0",
   "versions": {
-    "scx-format": "0.1.0a0",
+    "scx-format": "0.1.0a1",
     "scanpy": "1.11.5",
     "anndata": "0.13.4",
     "numpy": "2.5.3",
@@ -88,7 +88,23 @@
       "max_absolute_error": 0.0,
       "passed": true
     },
-    "metadata_text_values": true
+    "metadata_values_dtypes_categories_and_missing": true
+  },
+  "metadata_dtypes": {
+    "before_obs": {
+      "library_size_group": "category",
+      "total_counts": "float32",
+      "qc_pass": "bool",
+      "nullable_count": "Int64",
+      "nullable_flag": "boolean"
+    },
+    "after_obs": {
+      "library_size_group": "category",
+      "total_counts": "float32",
+      "qc_pass": "bool",
+      "nullable_count": "Int64",
+      "nullable_flag": "boolean"
+    }
   },
   "known_losses": {
     "uns": [
@@ -100,24 +116,14 @@
     ],
     "varm": [
       "PCs"
-    ],
-    "metadata_dtypes": {
-      "before_obs": {
-        "library_size_group": "category",
-        "total_counts": "float32"
-      },
-      "after_obs": {
-        "library_size_group": "category",
-        "total_counts": "category"
-      }
-    }
+    ]
   },
   "commands": [
     {
       "command": "from-h5ad",
       "returncode": 0,
       "stdout": "",
-      "stderr": "<repo>\\src\\scx\\anndata.py:47: UserWarning: SCX metadata are text: dtype, category and missing/empty distinctions are not preserved\n  warnings.warn(\"SCX metadata are text: dtype, category and missing/empty distinctions are not preserved\", UserWarning)\n<repo>\\src\\scx\\anndata.py:49: UserWarning: SCX omits extra layers, uns, varm, varp and raw\n  warnings.warn(\"SCX omits extra layers, uns, varm, varp and raw\", UserWarning)\n"
+      "stderr": "<repo>\\src\\scx\\anndata.py:39: UserWarning: SCX omits extra layers, uns, varm, varp and raw\n  warnings.warn(\"SCX omits extra layers, uns, varm, varp and raw\", UserWarning)\n"
     },
     {
       "command": "validate",

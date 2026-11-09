@@ -13,7 +13,7 @@ scx validate output.scx
 scx to-h5ad output.scx restored.h5ad
 ```
 
-`from-h5ad` requires `adata.layers['counts']`; it stores `adata.X` as `normalized` by default. `to-h5ad` restores counts to `layers['counts']`, and sets `X` to normalized when present, otherwise counts. Supported embeddings and cell graphs map to `obsm` and `obsp`. AnnData metadata are serialized as text; specialized pandas dtypes and arbitrary `uns` values are outside this alpha round trip.
+`from-h5ad` requires `adata.layers['counts']`; it stores `adata.X` as `normalized` by default. `to-h5ad` restores counts to `layers['counts']`, and sets `X` to normalized when present, otherwise counts. Supported embeddings and cell graphs map to `obsm` and `obsp`. New exports include `metadata.schema.json` to preserve numeric widths, boolean, nullable values, strings and categorical order/unused levels in `obs`/`var`. See [metadata schema 1.0](specification/metadata-schema-v1.md). Arbitrary `uns` values remain outside this alpha round trip.
 
 Seurat import/export is planned, not implemented. A Seurat adapter will transpose its FEATURE × CELL assay layers at the boundary.
 
@@ -22,7 +22,7 @@ Seurat import/export is planned, not implemented. A Seurat adapter will transpos
 See [PBMC3k validation](examples/pbmc3k/README.md) for a reproducible real-data
 H5AD → SCX → H5AD example, pinned source checksum and recorded results.
 
-Exports refuse existing destinations and validate a temporary dataset before publishing. The manifest begins with `# scx_version=0.1-alpha`; unversioned draft datasets need regeneration. Export warnings identify metadata dtype loss and unsupported omitted objects. GitHub Actions runs the tests on Python 3.10 and 3.12.
+Exports refuse existing destinations and validate a temporary dataset before publishing. The manifest begins with `# scx_version=0.1-alpha`; unversioned draft datasets need regeneration. Versioned legacy datasets without a metadata schema load as text with a warning. Unsupported mixed objects/dtypes fail explicitly; omitted analysis objects produce a warning. GitHub Actions runs the tests on Python 3.10 and 3.12.
 
 ```sh
 pip install -e '.[test]'

@@ -64,6 +64,11 @@ def main():
     totals = np.asarray(a.layers['counts'].sum(axis=1)).ravel()
     a.obs['library_size_group'] = pd.Categorical(np.where(totals >= np.median(totals), 'high', 'low'))
     a.obs['total_counts'] = totals
+    a.obs['qc_pass'] = totals > 0
+    a.obs['nullable_count'] = pd.array([int(x) if i % 10 else None for i, x in enumerate(totals)], dtype='Int64')
+    a.obs['nullable_flag'] = pd.array([True if i % 10 else None for i in range(a.n_obs)], dtype='boolean')
+    a.obs['library_size_group'] = a.obs['library_size_group'].cat.add_categories(['unused']).cat.as_ordered()
+    a.obs.loc[a.obs_names[0], 'library_size_group'] = np.nan
     source, target, folder = args.output/'input.h5ad', args.output/'restored.h5ad', args.output/'dataset.scx'
     a.write_h5ad(source)
     # Actual command entry points, rather than only in-memory adapter calls.
@@ -86,19 +91,17 @@ def main():
         checks[key] = compare_matrix(before.obsm[key], after.obsm[key])
     for key in before.obsp:
         checks[key] = compare_matrix(before.obsp[key], after.obsp[key])
-    for key in before.obs:
-        assert before.obs[key].astype(str).tolist() == after.obs[key].astype(str).tolist()
-    for key in before.var:
-        assert before.var[key].astype(str).tolist() == after.var[key].astype(str).tolist()
-    checks['metadata_text_values'] = True
+    pd.testing.assert_frame_equal(before.obs, after.obs, check_exact=True)
+    pd.testing.assert_frame_equal(before.var, after.var, check_exact=True)
+    checks['metadata_values_dtypes_categories_and_missing'] = True
     report = {'source_url': URL, 'source_sha256': digest, 'original_shape': original_shape,
               'tested_shape': list(before.shape), 'seed': 0, 'tolerance': 1e-6,
               'python': platform.python_version(), 'platform': platform.platform(),
               'versions': {p: version(p) for p in ['scx-format', 'scanpy', 'anndata', 'numpy', 'pandas', 'scipy', 'scikit-learn', 'umap-learn', 'numba', 'h5py']},
               'checks': checks,
-              'known_losses': {'uns': list(before.uns), 'varm': list(before.varm),
-                               'metadata_dtypes': {'before_obs': before.obs.dtypes.astype(str).to_dict(),
-                                                   'after_obs': after.obs.dtypes.astype(str).to_dict()}},
+              'metadata_dtypes': {'before_obs': before.obs.dtypes.astype(str).to_dict(),
+                                  'after_obs': after.obs.dtypes.astype(str).to_dict()},
+              'known_losses': {'uns': list(before.uns), 'varm': list(before.varm)},
               'commands': logs, 'passed': True}
     (args.output/'report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(checks, indent=2))

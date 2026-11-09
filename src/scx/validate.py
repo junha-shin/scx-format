@@ -25,6 +25,14 @@ def validate(root: str | Path) -> dict[str, int]:
             raise ValueError(f"missing file: {row.path}")
     cells = _ids(read_table(root / "cells.tsv.gz"), "cell_id")
     features = _ids(read_table(root / "features.tsv.gz"), "feature_id")
+    if (manifest.role == 'metadata_schema').any():
+        from .metadata import read_schema, read_metadata
+        schema = read_schema(root / 'metadata.schema.json')
+        try:
+            read_metadata(root / 'cells.tsv.gz', schema['cells'], 'cell_id')
+            read_metadata(root / 'features.tsv.gz', schema['features'], 'feature_id')
+        except (KeyError, TypeError) as exc:
+            raise ValueError('invalid metadata schema') from exc
     counts = read_matrix(root / "matrices/counts.mtx.gz")
     if counts.shape != (len(cells), len(features)):
         raise ValueError("counts shape does not match cell and feature tables")

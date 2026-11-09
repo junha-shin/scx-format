@@ -18,7 +18,7 @@ REQUIRED = {
     "features": ("features.tsv.gz", "features"),
     "counts": ("matrices/counts.mtx.gz", "counts"),
 }
-ROLES = set(REQUIRED) | {"normalized", "embedding", "cell_graph"}
+ROLES = set(REQUIRED) | {"normalized", "embedding", "cell_graph", "metadata_schema"}
 NAME = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 
@@ -51,6 +51,9 @@ def read_manifest(root: Path) -> pd.DataFrame:
             raise ValueError(f"required manifest entry invalid: {role}")
     if (manifest.role == "normalized").sum() > 1:
         raise ValueError("only one normalized matrix is supported")
+    schemas = manifest[manifest.role == 'metadata_schema']
+    if len(schemas) > 1 or (len(schemas) and (schemas.iloc[0]['path'] != 'metadata.schema.json' or schemas.iloc[0]['name'] != 'metadata')):
+        raise ValueError('invalid metadata schema manifest entry')
     return manifest
 
 

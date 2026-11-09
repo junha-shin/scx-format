@@ -79,8 +79,8 @@ def test_unsupported_matrix_and_table(tmp_path):
 
 def test_loss_warning(tmp_path):
     a = sample()
-    a.obs['batch'] = [1, 2]
-    with pytest.warns(UserWarning, match='metadata are text'):
+    a.uns['unsupported'] = 'analysis settings'
+    with pytest.warns(UserWarning, match='SCX omits'):
         from_anndata(a, tmp_path/'data.scx')
 
 
@@ -91,13 +91,10 @@ def test_nullable_metadata_round_trip(tmp_path):
     a.obs['number'] = pd.array([1, None], dtype='Int64')
     a.obs['flag'] = pd.array([True, None], dtype='boolean')
     a.var['score'] = np.array([0.12345678, 1.2345678, 2.3456789], dtype=np.float32)
-    with pytest.warns(UserWarning, match='metadata are text'):
-        from_anndata(a, tmp_path/'nullable.scx')
+    from_anndata(a, tmp_path/'nullable.scx')
     restored = to_anndata(tmp_path/'nullable.scx')
-    assert restored.obs['group'].tolist() == ['a', '']
-    assert restored.obs['number'].tolist() == ['1', '']
-    assert restored.obs['flag'].tolist() == ['True', '']
-    assert restored.var['score'].tolist() == a.var['score'].astype(str).tolist()
+    pd.testing.assert_frame_equal(restored.obs, a.obs)
+    pd.testing.assert_frame_equal(restored.var, a.var)
 
 
 def test_float32_text_precision(tmp_path):

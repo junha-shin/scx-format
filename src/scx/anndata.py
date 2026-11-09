@@ -7,19 +7,11 @@ import pandas as pd
 import warnings
 import tempfile
 import shutil
+import json
+from .metadata import write_metadata, read_metadata, read_schema
 
 from .core import REQUIRED, read_manifest, read_matrix, read_table, write_manifest, write_matrix, write_table, NAME
 from .validate import validate
-
-
-def _table(frame: pd.DataFrame, key: str) -> pd.DataFrame:
-    table = frame.copy()
-    table.insert(0, key, frame.index.astype(str))
-    if table.columns.duplicated().any():
-        raise ValueError(f"duplicate metadata column: {key}")
-    # Convert before filling: categorical/nullable columns reject an empty
-    # string fill value. String dtype also retains float32 display semantics.
-    return table.astype("string").fillna("").astype(str)
 
 
 def from_anndata(adata, root: str | Path) -> None:
@@ -43,13 +35,14 @@ def _from_anndata(adata, root: str | Path) -> None:
         raise ValueError("AnnData layers['counts'] is required")
     if not adata.obs_names.is_unique or not adata.var_names.is_unique:
         raise ValueError("cell and feature names must be unique")
-    if len(adata.obs.columns) or len(adata.var.columns):
-        warnings.warn("SCX metadata are text: dtype, category and missing/empty distinctions are not preserved", UserWarning)
     if set(adata.layers.keys()) - {"counts", None} or len(adata.uns) or list(adata.varm.keys()) or list(adata.varp.keys()) or adata.raw is not None:
         warnings.warn("SCX omits extra layers, uns, varm, varp and raw", UserWarning)
     entries = [(path, role, name) for role, (path, name) in REQUIRED.items()]
-    write_table(root / "cells.tsv.gz", _table(adata.obs, "cell_id"))
-    write_table(root / "features.tsv.gz", _table(adata.var, "feature_id"))
+    schema = {'schema_version': '1.0',
+              'cells': write_metadata(root / 'cells.tsv.gz', adata.obs, 'cell_id'),
+              'features': write_metadata(root / 'features.tsv.gz', adata.var, 'feature_id')}
+    (root / 'metadata.schema.json').write_text(json.dumps(schema, ensure_ascii=False, allow_nan=False, indent=2), encoding='utf-8')
+    entries.append(('metadata.schema.json', 'metadata_schema', 'metadata'))
     write_matrix(root / "matrices/counts.mtx.gz", adata.layers["counts"])
     if adata.X is not None:
         write_matrix(root / "matrices/normalized.mtx.gz", adata.X)
@@ -88,6 +81,12 @@ def to_anndata(root: str | Path):
     manifest = read_manifest(root)
     cells = read_table(root / "cells.tsv.gz").set_index("cell_id")
     features = read_table(root / "features.tsv.gz").set_index("feature_id")
+    if (manifest.role == 'metadata_schema').any():
+        schema = read_schema(root / 'metadata.schema.json')
+        cells = read_metadata(root / 'cells.tsv.gz', schema['cells'], 'cell_id')
+        features = read_metadata(root / 'features.tsv.gz', schema['features'], 'feature_id')
+    else:
+        warnings.warn('Legacy SCX metadata have no dtype schema; loading as text', UserWarning)
     counts = read_matrix(root / "matrices/counts.mtx.gz")
     normalized = manifest[manifest.role == "normalized"]
     x = read_matrix(root / normalized.iloc[0]["path"]) if len(normalized) else counts.copy()

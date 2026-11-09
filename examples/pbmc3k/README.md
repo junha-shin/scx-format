@@ -44,10 +44,12 @@ its own restored copy, not against reference coordinates.
    apply log1p. No scaled matrix is presented as raw counts.
 3. Select 1,000 highly variable genes, compute 30 PCs, a 15-neighbor graph and
    UMAP, using random seed 0.
-4. Add a derived library-size category and numeric totals to exercise metadata.
+4. Add derived QC metadata: numeric totals, boolean, nullable integer/boolean,
+   and ordered library-size categories with an unused category and missing value.
    These are QC annotations, not inferred biological cell types.
 5. Save H5AD, invoke `from-h5ad`, `validate`, and `to-h5ad`, then read both H5ADs.
-6. Assert exact cell/feature order and metadata text values; compare counts,
+6. Assert exact cell/feature order and metadata values, dtypes, categorical order,
+   unused levels and missing masks with `assert_frame_equal(check_exact=True)`; compare counts,
    normalized expression, PCA, UMAP, connectivities and distances with maximum
    absolute error ≤ 1e-6. Sparse comparisons do not densify expression matrices.
 
@@ -57,19 +59,20 @@ The checked-in `report.json` records the actual results and dependency versions.
 The final Windows/Python 3.12.14 run on 2026-11-09 passed all comparisons for
 2,700 cells × 13,714 retained genes (2,282,976 nonzero counts). Counts,
 normalized expression, PCA, UMAP, connectivities and distances all had maximum
-absolute error **0.0**. Cell/feature order and metadata text values matched.
+absolute error **0.0**. Cell/feature order and typed metadata matched exactly.
 
 This is one real dataset and one analysis pipeline, not a general compatibility
-or performance benchmark. Metadata dtypes, `uns` analysis settings and `varm`
-PCA loadings remain outside the supported alpha profile. AnnData may convert
-repeated text columns to categorical when saving H5AD; that does not restore the
-original numeric dtype or categorical ordering.
+or performance benchmark. `uns` analysis settings and `varm` PCA loadings remain
+outside the supported alpha profile. Metadata dtypes are now preserved through
+[schema 1.0](../../specification/metadata-schema-v1.md). AnnData may itself convert
+repeated text columns to categorical on H5AD save, so the baseline is the source
+H5AD after serialization.
 
 Validation work found and fixed:
 
 - Missing values in categorical and nullable numeric/boolean metadata previously
-  raised an exception. They now export as empty fields under the documented
-  alpha text semantics. A regression test covers these cases.
+  raised an exception. Schema 1.0 now preserves their dtype and missing mask,
+  distinguishing empty strings from missing values. Regression tests cover this.
 - Default float32 text formatting introduced errors up to approximately 4.9e-7
   in the initial run. Matrix and embedding exports now promote floating data to
   float64 before writing sufficient digits. This also avoids malformed output
