@@ -1,0 +1,71 @@
+{
+  "label": "600dcba",
+  "seed": 42,
+  "genes": 2000,
+  "draws_per_cell": 100,
+  "cells": [
+    1000,
+    10000
+  ],
+  "repeats": 1,
+  "platform": "Windows-11-10.0.26100-SP0",
+  "memory_method": "sampled process-tree RSS at 10 ms (includes Python validator child)",
+  "adapter_sha256": "ad0177dc37f3384c3931c70e3c2369beb0074069d0c343518083d1af97925f5e",
+  "python_implementation_sha256": "619d04242814bb6938f5f52ca765024c8da1296915c2b3e4aa193bd0a3098e66",
+  "R": {
+    "cells": 10000,
+    "genes": 2000,
+    "nnz": 975755,
+    "R": "R version 4.5.2 (2025-10-31 ucrt)",
+    "SeuratObject": "5.4.0",
+    "Matrix": "1.7.4",
+    "jsonlite": "2.0.0"
+  },
+  "records": [
+    {
+      "cells": 1000,
+      "repeat": 0,
+      "command": "seurat-export",
+      "wall_seconds": 6.71454059984535,
+      "peak_bytes": 435318784,
+      "output_bytes": 1292346,
+      "input_rds_bytes": 3003817,
+      "input_sha256": "d6d90316e9f44e3da17ebac01dc570e6629a06d17da8b9d9d1556237fa10feb9"
+    },
+    {
+      "cells": 1000,
+      "repeat": 0,
+      "command": "seurat-import",
+      "wall_seconds": 5.616904300171882,
+      "peak_bytes": 315666432,
+      "output_bytes": 3003848,
+      "input_rds_bytes": 3003817,
+      "input_sha256": "d6d90316e9f44e3da17ebac01dc570e6629a06d17da8b9d9d1556237fa10feb9"
+    },
+    {
+      "cells": 10000,
+      "repeat": 0,
+      "command": "seurat-export",
+      "wall_seconds": 35.23502549994737,
+      "peak_bytes": 1254203392,
+      "output_bytes": 13036871,
+      "input_rds_bytes": 29576234,
+      "input_sha256": "ca9fff261bd7c9a515902f7533c6264c252f5519a5e02c2dc0a07f4f7a3914e2"
+    },
+    {
+      "cells": 10000,
+      "repeat": 0,
+      "command": "seurat-import",
+      "wall_seconds": 10.227169299963862,
+      "peak_bytes": 401068032,
+      "output_bytes": 29576265,
+      "input_rds_bytes": 29576234,
+      "input_sha256": "ca9fff261bd7c9a515902f7533c6264c252f5519a5e02c2dc0a07f4f7a3914e2"
+    }
+  ],
+  "round_trip_passed": true,
+  "thread_limits": {
+    "blas_openmp_requested": 1,
+    "matrix_market_parallelism": "default/automatic (not explicitly limited)"
+  }
+}

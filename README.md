@@ -20,6 +20,10 @@ The [Seurat adapter MVP](adapters/seurat/README.md) supports single-assay R impo
 See [compatibility and support tables](compatibility/README.md) for verified
 AnnData environments, legacy Assay/Assay5, dtype mappings, omissions and errors.
 
+See [scaling benchmarks](benchmarks/README.md) for reproducible Python/Seurat
+time, peak-memory and file-size measurements at 1k, 10k and 50k cells, including
+before/after results and the gzip level 6 storage tradeoff.
+
 ## Development
 
 See [PBMC3k validation](examples/pbmc3k/README.md) for a reproducible real-data

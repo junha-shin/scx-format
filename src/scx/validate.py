@@ -17,37 +17,56 @@ def _ids(table: pd.DataFrame, column: str) -> list[str]:
     return values
 
 
-def validate(root: str | Path) -> dict[str, int]:
+def _inspect(root: str | Path, *, retain=False):
+    """Check every resource once; retain it only for an importing caller."""
     root = Path(root)
     manifest = read_manifest(root)
     for row in manifest.itertuples(index=False):
         if not safe_path(root, row.path).is_file():
             raise ValueError(f"missing file: {row.path}")
-    cells = _ids(read_table(root / "cells.tsv.gz"), "cell_id")
-    features = _ids(read_table(root / "features.tsv.gz"), "feature_id")
+    cell_table = read_table(root / "cells.tsv.gz")
+    feature_table = read_table(root / "features.tsv.gz")
+    cells = _ids(cell_table, "cell_id")
+    features = _ids(feature_table, "feature_id")
     if (manifest.role == 'metadata_schema').any():
         from .metadata import read_schema, read_metadata
         schema = read_schema(root / 'metadata.schema.json')
         try:
-            read_metadata(root / 'cells.tsv.gz', schema['cells'], 'cell_id')
-            read_metadata(root / 'features.tsv.gz', schema['features'], 'feature_id')
+            cell_metadata = read_metadata(root / 'cells.tsv.gz', schema['cells'], 'cell_id', table=cell_table)
+            feature_metadata = read_metadata(root / 'features.tsv.gz', schema['features'], 'feature_id', table=feature_table)
         except (KeyError, TypeError) as exc:
             raise ValueError('invalid metadata schema') from exc
-    counts = read_matrix(root / "matrices/counts.mtx.gz")
-    if counts.shape != (len(cells), len(features)):
+    else:
+        cell_metadata = cell_table.set_index('cell_id')
+        feature_metadata = feature_table.set_index('feature_id')
+    shape = (len(cells), len(features))
+    payload = {'cells': cell_metadata, 'features': feature_metadata, 'normalized': None,
+               'embeddings': {}, 'graphs': {}, 'typed_metadata': (manifest.role == 'metadata_schema').any()} if retain else None
+    del cell_table, feature_table, cell_metadata, feature_metadata
+    matrix = read_matrix(root / "matrices/counts.mtx.gz")
+    if matrix.shape != shape:
         raise ValueError("counts shape does not match cell and feature tables")
-    if not np.isfinite(counts.data).all() or (counts.data < 0).any():
+    if not np.isfinite(matrix.data).all() or (matrix.data < 0).any():
         raise ValueError("counts must be finite and nonnegative")
+    if retain:
+        payload['counts'] = matrix
+    del matrix
     for row in manifest.itertuples(index=False):
         path = safe_path(root, row.path)
         if row.role == "normalized":
             matrix = read_matrix(path)
-            if matrix.shape != counts.shape or not np.isfinite(matrix.data).all():
+            if matrix.shape != shape or not np.isfinite(matrix.data).all():
                 raise ValueError("normalized matrix has invalid shape or values")
+            if retain:
+                payload['normalized'] = matrix
+            del matrix
         elif row.role == "cell_graph":
             matrix = read_matrix(path)
             if matrix.shape != (len(cells), len(cells)) or not np.isfinite(matrix.data).all():
                 raise ValueError(f"cell graph {row.name} has invalid shape or values")
+            if retain:
+                payload['graphs'][row.name] = matrix
+            del matrix
         elif row.role == "embedding":
             table = read_table(path)
             if len(table.columns) < 2 or table.columns[0] != "cell_id" or table.cell_id.tolist() != cells:
@@ -58,4 +77,18 @@ def validate(root: str | Path) -> dict[str, int]:
                 raise ValueError(f"embedding {row.name} must be numeric") from exc
             if not np.isfinite(values).all():
                 raise ValueError(f"embedding {row.name} has nonfinite values")
-    return {"cells": len(cells), "features": len(features), "files": len(manifest)}
+            if retain:
+                # Keep the original importer's round-trip float parser after
+                # the strict pandas numeric check, without rereading the TSV.
+                payload['embeddings'][row.name] = table.iloc[:, 1:].to_numpy(dtype=float)
+            del table, values
+    return {"cells": len(cells), "features": len(features), "files": len(manifest)}, payload
+
+
+def validate(root: str | Path) -> dict[str, int]:
+    return _inspect(root)[0]
+
+
+def load_validated(root: str | Path):
+    """Return checked import resources without rereading them or skipping checks."""
+    return _inspect(root, retain=True)[1]

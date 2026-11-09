@@ -1,0 +1,42 @@
+{
+  "before": [
+    {
+      "function": "read_matrix",
+      "file": "core.py",
+      "calls": 6,
+      "cumulative_seconds": 1.2445921
+    },
+    {
+      "function": "read_table",
+      "file": "core.py",
+      "calls": 12,
+      "cumulative_seconds": 3.416871
+    },
+    {
+      "function": "read_metadata",
+      "file": "metadata.py",
+      "calls": 4,
+      "cumulative_seconds": 1.6990714
+    }
+  ],
+  "after": [
+    {
+      "function": "read_matrix",
+      "file": "core.py",
+      "calls": 3,
+      "cumulative_seconds": 0.5615935000000001
+    },
+    {
+      "function": "read_table",
+      "file": "core.py",
+      "calls": 4,
+      "cumulative_seconds": 1.2955109
+    },
+    {
+      "function": "read_metadata",
+      "file": "metadata.py",
+      "calls": 2,
+      "cumulative_seconds": 0.7010801000000001
+    }
+  ]
+}

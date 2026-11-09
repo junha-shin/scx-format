@@ -1,6 +1,24 @@
 # SCX v0.1-alpha, single-assay SeuratObject >= 5 adapter.
 .scx_json <- function(x) as.character(jsonlite::toJSON(x, auto_unbox = TRUE, na = "null", null = "null", digits = 17))
 
+.scx_column_json <- function(values) {
+  if (is.integer(values)) {
+    encoded <- as.character(values)
+  } else if (is.double(values)) {
+    encoded <- sprintf("%.17g", values)
+  } else if (is.logical(values)) {
+    encoded <- ifelse(values, "true", "false")
+  } else {
+    # Repeated text is encoded once per unique value; jsonlite still handles
+    # escaping rather than treating R string escapes as JSON escapes.
+    unique_values <- unique(values)
+    encoded_unique <- vapply(seq_along(unique_values), function(i) .scx_json(unique_values[i]), character(1))
+    encoded <- encoded_unique[match(values, unique_values)]
+  }
+  encoded[is.na(values)] <- "null"
+  unname(encoded)
+}
+
 .scx_tsv <- function(x, path) {
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   con <- gzfile(path, "wt", encoding = "UTF-8")
@@ -63,7 +81,7 @@
       spec <- list(name = name, dtype = dtype)
       values <- x
     }
-    table[[name]] <<- vapply(seq_along(values), function(i) .scx_json(values[i]), character(1))
+    table[[name]] <<- .scx_column_json(values)
     spec
   })
   .scx_tsv(table, path)
@@ -75,6 +93,16 @@
   if (is.null(cols)) return(x[rows, , drop = FALSE])
   if (!setequal(colnames(x), cols) || ncol(x) != length(cols)) stop("column axis does not cover canonical IDs")
   x[rows, cols, drop = FALSE]
+}
+
+.scx_values <- function(x) {
+  # Implicit sparse zeros are finite and nonnegative. Checking the whole sparse
+  # matrix with is.finite() can materialize a dense CELL x CELL logical matrix.
+  if (inherits(x, "sparseMatrix")) {
+    if ("x" %in% methods::slotNames(x)) return(methods::slot(x, "x"))
+    return(1)  # Pattern matrix: stored entries are implicit ones.
+  }
+  x
 }
 
 #' Export a single Seurat assay to a new SCX directory.
@@ -92,7 +120,9 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
   features <- rownames(counts); cells <- colnames(counts)
   .scx_ids(cells); .scx_ids(features)
   if (!length(cells) || !length(features)) stop("empty expression matrix")
-  if (any(!is.finite(counts)) || any(counts < 0)) stop("counts must be finite and nonnegative")
+  values <- .scx_values(counts)
+  if (is.complex(values) || any(!is.finite(values)) || any(values < 0)) stop("counts must be finite real and nonnegative")
+  rm(values)
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   stage <- tempfile(".scx-", tmpdir = dirname(path)); dir.create(stage)
   on.exit(unlink(stage, recursive = TRUE), add = TRUE)
@@ -107,7 +137,9 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
   if (!is.null(normalized_layer)) {
     if (normalized_layer %in% layers) {
       normalized <- .scx_aligned(SeuratObject::LayerData(object[[assay]], layer = normalized_layer), features, cells)
-      if (any(!is.finite(normalized))) stop("normalized matrix must be finite")
+      values <- .scx_values(normalized)
+      if (is.complex(values) || any(!is.finite(values))) stop("normalized matrix must be finite real")
+      rm(values)
       .scx_mtx(Matrix::t(normalized), file.path(stage, "matrices/normalized.mtx.gz"))
       entries <- rbind(entries, data.frame(path = "matrices/normalized.mtx.gz", role = "normalized", name = "normalized"))
     } else warning("normalized layer absent; exporting counts only")
@@ -131,7 +163,9 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
     graph <- object[[name]]
     if (SeuratObject::DefaultAssay(graph) != assay) stop("graph belongs to a different assay: ", name)
     x <- .scx_aligned(graph, cells, cells)
-    if (any(!is.finite(x))) stop("graph must be finite")
+    values <- .scx_values(x)
+    if (is.complex(values) || any(!is.finite(values))) stop("graph must be finite real")
+    rm(values)
     relative <- paste0("graphs/", name, ".mtx.gz")
     .scx_mtx(x, file.path(stage, relative))
     entries <- rbind(entries, data.frame(path = relative, role = "cell_graph", name = name))
@@ -213,7 +247,7 @@ read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python"), a
     x
   }
   for (column in spec$columns) {
-    values <- lapply(table[[column$name]], jsonlite::fromJSON, simplifyVector = FALSE)
+    values <- jsonlite::fromJSON(paste0("[", paste(table[[column$name]], collapse = ","), "]"), simplifyVector = FALSE)
     if (column$dtype == "category") {
       levels <- convert(column$categories, column$categories_dtype)
       codes <- vapply(values, function(x) if (is.null(x)) NA_integer_ else as.integer(x) + 1L, integer(1))

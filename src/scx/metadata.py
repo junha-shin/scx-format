@@ -78,8 +78,9 @@ def decode(values, dtype):
     return result
 
 
-def read_metadata(path, spec, id_column):
-    table = read_table(path)
+def read_metadata(path, spec, id_column, *, table=None):
+    if table is None:
+        table = read_table(path)
     if not isinstance(spec, dict) or set(spec) != {'index_name', 'columns'}:
         raise ValueError('invalid metadata table schema')
     if spec['index_name'] is not None and not isinstance(spec['index_name'], str):

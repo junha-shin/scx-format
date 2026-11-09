@@ -1,0 +1,77 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "cells": 1000,
+      "repeat": 0,
+      "errors": {
+        "counts": 0.0,
+        "normalized": 0.0,
+        "X_pca": 0.0,
+        "X_umap": 0.0,
+        "neighbors": 0.0
+      },
+      "typed_metadata": true
+    },
+    {
+      "cells": 1000,
+      "repeat": 1,
+      "errors": {
+        "counts": 0.0,
+        "normalized": 0.0,
+        "X_pca": 0.0,
+        "X_umap": 0.0,
+        "neighbors": 0.0
+      },
+      "typed_metadata": true
+    },
+    {
+      "cells": 10000,
+      "repeat": 0,
+      "errors": {
+        "counts": 0.0,
+        "normalized": 0.0,
+        "X_pca": 0.0,
+        "X_umap": 0.0,
+        "neighbors": 0.0
+      },
+      "typed_metadata": true
+    },
+    {
+      "cells": 10000,
+      "repeat": 1,
+      "errors": {
+        "counts": 0.0,
+        "normalized": 0.0,
+        "X_pca": 0.0,
+        "X_umap": 0.0,
+        "neighbors": 0.0
+      },
+      "typed_metadata": true
+    },
+    {
+      "cells": 50000,
+      "repeat": 0,
+      "errors": {
+        "counts": 0.0,
+        "normalized": 0.0,
+        "X_pca": 0.0,
+        "X_umap": 0.0,
+        "neighbors": 0.0
+      },
+      "typed_metadata": true
+    },
+    {
+      "cells": 50000,
+      "repeat": 1,
+      "errors": {
+        "counts": 0.0,
+        "normalized": 0.0,
+        "X_pca": 0.0,
+        "X_umap": 0.0,
+        "neighbors": 0.0
+      },
+      "typed_metadata": true
+    }
+  ]
+}

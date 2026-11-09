@@ -76,11 +76,13 @@ def read_table(path: Path) -> pd.DataFrame:
 
 
 def write_table(path: Path, table: pd.DataFrame) -> None:
-    values = [str(c) for c in table.columns] + [str(v) for v in table.to_numpy().flat]
-    if any(any(c in value for c in "\t\r\n") for value in values):
+    def invalid(values):
+        return any(any(c in str(value) for c in "\t\r\n") for value in values)
+    if invalid(table.columns) or any(invalid(column.array) for _, column in table.items()
+                                     if not pd.api.types.is_numeric_dtype(column.dtype)):
         raise ValueError("tabs and newlines are unsupported in tables")
     path.parent.mkdir(parents=True, exist_ok=True)
-    table.to_csv(path, sep="\t", index=False, compression="gzip")
+    table.to_csv(path, sep="\t", index=False, compression={"method": "gzip", "compresslevel": 6})
 
 
 def read_matrix(path: Path) -> sparse.csr_matrix:
@@ -99,5 +101,5 @@ def write_matrix(path: Path, matrix) -> None:
     # embedded NUL bytes when precision exceeds the native float32 buffer.
     if np.issubdtype(matrix.dtype, np.floating):
         matrix = matrix.astype(np.float64)
-    with gzip.open(path, "wb") as handle:
+    with gzip.open(path, "wb", compresslevel=6) as handle:
         mmwrite(handle, matrix, symmetry="general", precision=17)

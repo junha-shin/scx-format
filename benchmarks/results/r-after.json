@@ -1,0 +1,92 @@
+{
+  "label": "optimized",
+  "seed": 42,
+  "genes": 2000,
+  "draws_per_cell": 100,
+  "cells": [
+    1000,
+    10000,
+    50000
+  ],
+  "repeats": 1,
+  "platform": "Windows-11-10.0.26100-SP0",
+  "memory_method": "sampled process-tree RSS at 10 ms (includes Python validator child)",
+  "adapter_sha256": "de4262a8db216bb189cf2b76b38c8e4d85712931d86feb3c44553a02e1a2197e",
+  "python_implementation_sha256": "17e6dbe745a7ef0f676ecedcdf368e60f3012c53b94f95e84fe188af66c970d8",
+  "R": {
+    "cells": 50000,
+    "genes": 2000,
+    "nnz": 4877842,
+    "R": "R version 4.5.2 (2025-10-31 ucrt)",
+    "SeuratObject": "5.4.0",
+    "Matrix": "1.7.4",
+    "jsonlite": "2.0.0"
+  },
+  "records": [
+    {
+      "cells": 1000,
+      "repeat": 0,
+      "command": "seurat-export",
+      "wall_seconds": 4.414590099826455,
+      "peak_bytes": 319713280,
+      "output_bytes": 1292346,
+      "input_rds_bytes": 3003817,
+      "input_sha256": "d6d90316e9f44e3da17ebac01dc570e6629a06d17da8b9d9d1556237fa10feb9"
+    },
+    {
+      "cells": 1000,
+      "repeat": 0,
+      "command": "seurat-import",
+      "wall_seconds": 4.910423099994659,
+      "peak_bytes": 308101120,
+      "output_bytes": 3003848,
+      "input_rds_bytes": 3003817,
+      "input_sha256": "d6d90316e9f44e3da17ebac01dc570e6629a06d17da8b9d9d1556237fa10feb9"
+    },
+    {
+      "cells": 10000,
+      "repeat": 0,
+      "command": "seurat-export",
+      "wall_seconds": 19.52206140011549,
+      "peak_bytes": 500092928,
+      "output_bytes": 13036871,
+      "input_rds_bytes": 29576234,
+      "input_sha256": "ca9fff261bd7c9a515902f7533c6264c252f5519a5e02c2dc0a07f4f7a3914e2"
+    },
+    {
+      "cells": 10000,
+      "repeat": 0,
+      "command": "seurat-import",
+      "wall_seconds": 9.284540900029242,
+      "peak_bytes": 425590784,
+      "output_bytes": 29576265,
+      "input_rds_bytes": 29576234,
+      "input_sha256": "ca9fff261bd7c9a515902f7533c6264c252f5519a5e02c2dc0a07f4f7a3914e2"
+    },
+    {
+      "cells": 50000,
+      "repeat": 0,
+      "command": "seurat-export",
+      "wall_seconds": 87.60817060014233,
+      "peak_bytes": 1018204160,
+      "output_bytes": 66063950,
+      "input_rds_bytes": 147936442,
+      "input_sha256": "d61af78540ee14c51ba471ce8d76c085ba332e76710e124e4b86a49e414af6ab"
+    },
+    {
+      "cells": 50000,
+      "repeat": 0,
+      "command": "seurat-import",
+      "wall_seconds": 32.99922709958628,
+      "peak_bytes": 839319552,
+      "output_bytes": 147936473,
+      "input_rds_bytes": 147936442,
+      "input_sha256": "d61af78540ee14c51ba471ce8d76c085ba332e76710e124e4b86a49e414af6ab"
+    }
+  ],
+  "round_trip_passed": true,
+  "thread_limits": {
+    "blas_openmp_requested": 1,
+    "matrix_market_parallelism": "default/automatic (not explicitly limited)"
+  }
+}

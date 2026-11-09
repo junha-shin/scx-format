@@ -8,10 +8,10 @@ import warnings
 import tempfile
 import shutil
 import json
-from .metadata import write_metadata, read_metadata, read_schema
+from .metadata import write_metadata
 
-from .core import REQUIRED, read_manifest, read_matrix, read_table, write_manifest, write_matrix, write_table, NAME
-from .validate import validate
+from .core import REQUIRED, write_manifest, write_matrix, write_table, NAME
+from .validate import validate, load_validated
 
 
 def from_anndata(adata, root: str | Path) -> None:
@@ -76,25 +76,15 @@ def _from_anndata(adata, root: str | Path) -> None:
 def to_anndata(root: str | Path):
     from anndata import AnnData
 
-    root = Path(root)
-    validate(root)
-    manifest = read_manifest(root)
-    cells = read_table(root / "cells.tsv.gz").set_index("cell_id")
-    features = read_table(root / "features.tsv.gz").set_index("feature_id")
-    if (manifest.role == 'metadata_schema').any():
-        schema = read_schema(root / 'metadata.schema.json')
-        cells = read_metadata(root / 'cells.tsv.gz', schema['cells'], 'cell_id')
-        features = read_metadata(root / 'features.tsv.gz', schema['features'], 'feature_id')
-    else:
+    data = load_validated(root)
+    if not data['typed_metadata']:
         warnings.warn('Legacy SCX metadata have no dtype schema; loading as text', UserWarning)
-    counts = read_matrix(root / "matrices/counts.mtx.gz")
-    normalized = manifest[manifest.role == "normalized"]
-    x = read_matrix(root / normalized.iloc[0]["path"]) if len(normalized) else counts.copy()
-    adata = AnnData(X=x, obs=cells, var=features)
+    counts = data['counts']
+    x = data['normalized'] if data['normalized'] is not None else counts.copy()
+    adata = AnnData(X=x, obs=data['cells'], var=data['features'])
     adata.layers["counts"] = counts
-    for row in manifest.itertuples(index=False):
-        if row.role == "embedding":
-            adata.obsm[row.name] = read_table(root / row.path).iloc[:, 1:].to_numpy(dtype=float)
-        elif row.role == "cell_graph":
-            adata.obsp[row.name] = read_matrix(root / row.path)
+    for name, values in data['embeddings'].items():
+        adata.obsm[name] = values
+    for name, graph in data['graphs'].items():
+        adata.obsp[name] = graph
     return adata

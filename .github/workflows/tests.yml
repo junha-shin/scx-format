@@ -47,8 +47,28 @@ jobs:
       - run: Rscript adapters/seurat/scripts/run-tests.R
       - run: Rscript adapters/seurat/scripts/compat-fixtures.R .r-tests/fixtures
       - run: python scripts/check_compatibility.py --fixtures .r-tests/fixtures --output .compat-results/bridge
+      - if: matrix.anndata == '0.13.4'
+        run: |
+          pip install -r benchmarks/requirements.txt
+          python benchmarks/scale.py r-run --cells 100 --genes 50 --per-cell 5 --inputs benchmarks/work/r-inputs --output benchmarks/work/r-smoke
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: seurat-anndata-${{ matrix.anndata }}
           path: .compat-results/bridge/report.json
+  benchmark-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e '.[test]' -r compatibility/anndata-0.13.4.txt -r benchmarks/requirements.txt
+      - run: python benchmarks/scale.py run --cells 20 100 --genes 50 --per-cell 5 --repeats 1 --output benchmarks/work/smoke
+      - run: python benchmarks/check.py --output benchmarks/work/smoke
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-smoke
+          path: |
+            benchmarks/work/smoke/report.json
+            benchmarks/work/smoke/verification.json

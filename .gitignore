@@ -21,3 +21,6 @@ examples/seurat/output*/
 .r-tests/
 .stability-tests-compat*/
 .compat-results/
+benchmarks/work/
+.venv-bench/
+.stability-tests-perf/

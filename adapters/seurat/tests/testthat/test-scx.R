@@ -92,3 +92,23 @@ for (assay_class in c("Assay", "Assay5")) testthat::test_that(paste(assay_class,
   manifest <- read.delim(file.path(root, "manifest.tsv"), skip = 1)
   testthat::expect_setequal(manifest$role, c("cells", "features", "counts", "metadata_schema"))
 })
+
+testthat::test_that("bulk metadata coding matches scalar JSON semantics", {
+  vectors <- list(c(1L, NA_integer_, 2147483647L), c(0.12345678901234567, NA, 1.234567890123456e-30),
+                  c(TRUE, NA, FALSE), c("", "null", NA_character_, "quote\" slash\\ tab\t line\n", "null"))
+  for (values in vectors) {
+    reference <- lapply(seq_along(values), function(i) jsonlite::fromJSON(.scx_json(values[i]), simplifyVector = FALSE))
+    encoded <- .scx_column_json(values)
+    restored <- jsonlite::fromJSON(paste0("[", paste(encoded, collapse = ","), "]"), simplifyVector = FALSE)
+    testthat::expect_identical(restored, reference)
+  }
+})
+
+testthat::test_that("sparse finite checks inspect only stored values", {
+  n <- 100000L
+  x <- Matrix::sparseMatrix(i = seq_len(n), j = seq_len(n), x = 1, dims = c(n, n))
+  testthat::expect_length(.scx_values(x), n)
+  testthat::expect_true(all(is.finite(.scx_values(x))))
+  x@x[1] <- NaN
+  testthat::expect_true(any(!is.finite(.scx_values(x))))
+})
