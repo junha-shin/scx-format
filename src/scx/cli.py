@@ -30,13 +30,14 @@ def main(argv=None) -> int:
             from_anndata(ad.read_h5ad(args.input), args.output)
         else:
             from .anndata import to_anndata
+            from .h5ad import write_h5ad
             output = Path(args.output)
             if output.exists():
                 raise FileExistsError(f"output already exists: {output}")
             output.parent.mkdir(parents=True, exist_ok=True)
             with tempfile.TemporaryDirectory(prefix=".scx-h5ad-", dir=output.parent) as stage:
                 temporary = Path(stage) / "output.h5ad"
-                to_anndata(args.input).write_h5ad(temporary, convert_strings_to_categoricals=False)
+                write_h5ad(to_anndata(args.input), temporary)
                 # Hard-link creation fails atomically if another writer created output.
                 os.link(temporary, output)
     except (ValueError, OSError, ImportError) as exc:

@@ -147,7 +147,8 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
 
 #' Import an SCX dataset via the Python validator and typed metadata decoder.
 #' @export
-read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python")) {
+read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python"), assay_class = c("Assay5", "Assay")) {
+  assay_class <- match.arg(assay_class)
   if (!nzchar(python)) stop("Python with scx-format installed is required for validated import")
   status <- system2(python, c("-m", "scx.cli", "validate", shQuote(normalizePath(path, winslash = "/", mustWork = TRUE))))
   if (!identical(status, 0L)) stop("SCX validation failed")
@@ -163,7 +164,8 @@ read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python")) {
     methods::as(Matrix::readMM(con), "CsparseMatrix")
   }
   counts <- Matrix::t(load_matrix("matrices/counts.mtx.gz")); dimnames(counts) <- list(genes, ids)
-  object <- SeuratObject::CreateSeuratObject(counts, assay = assay, meta.data = meta)
+  assay_object <- if (assay_class == "Assay5") SeuratObject::CreateAssay5Object(counts = counts) else SeuratObject::CreateAssayObject(counts = counts)
+  object <- SeuratObject::CreateSeuratObject(assay_object, assay = assay, meta.data = meta)
   if (!identical(rownames(object[[assay]]), genes)) stop("Seurat altered feature IDs; import refused")
   # Replace Seurat's generated metadata to retain exactly the SCX columns.
   object@meta.data <- meta

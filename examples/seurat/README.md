@@ -49,6 +49,11 @@ The reverse check compares the restored Seurat object with the saved original
 RDS for the same supported data. Generated Seurat reduction component keys and
 analysis internals outside the adapter profile are not compared.
 
+For the versioned Assay/Assay5 matrix, see [compatibility results](../../compatibility/README.md).
+Across AnnData versions, missing character metadata are stored in H5AD using
+nullable strings with an explicit mask; the native R character values and NA
+positions are retained on reverse import.
+
 ## Recorded results and environment
 
 The 2026-11-09 validation used Seurat 5.6.0 / SeuratObject 5.4.0 with R 4.5.2

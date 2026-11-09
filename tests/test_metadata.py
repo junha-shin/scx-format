@@ -105,3 +105,25 @@ def test_h5ad_preserves_repeated_string_dtype(tmp_path):
     from_anndata(a, tmp_path/'data.scx')
     main(['to-h5ad', str(tmp_path/'data.scx'), str(tmp_path/'out.h5ad')])
     pd.testing.assert_frame_equal(read_h5ad(tmp_path/'out.h5ad').obs, a.obs)
+
+
+def test_h5ad_nullable_text_compatibility(tmp_path):
+    import anndata as ad
+    from anndata import read_h5ad
+    from scx.cli import main
+    a = sample()
+    a.obs['text'] = np.array(['', None], dtype=object)
+    a.var['text'] = np.array(['null', None, ''], dtype=object)
+    from_anndata(a, tmp_path/'data.scx')
+    previous = ad.settings.allow_write_nullable_strings if hasattr(ad.settings, 'allow_write_nullable_strings') else None
+    with pytest.warns(UserWarning, match='nullable string'):
+        main(['to-h5ad', str(tmp_path/'data.scx'), str(tmp_path/'out.h5ad')])
+    restored = read_h5ad(tmp_path/'out.h5ad')
+    assert restored.obs['text'].dtype == pd.StringDtype(storage='python')
+    assert restored.obs['text'].iloc[0] == ''
+    assert pd.isna(restored.obs['text'].iloc[1])
+    assert restored.var['text'].iloc[0] == 'null'
+    assert pd.isna(restored.var['text'].iloc[1])
+    assert restored.var['text'].iloc[2] == ''
+    if previous is not None:
+        assert ad.settings.allow_write_nullable_strings == previous

@@ -19,3 +19,5 @@ examples/pbmc3k/output*/
 examples/seurat/data/
 examples/seurat/output*/
 .r-tests/
+.stability-tests-compat*/
+.compat-results/

@@ -4,23 +4,39 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python: ['3.10', '3.12']
+        include:
+          - python: '3.10'
+            anndata: '0.11.4'
+          - python: '3.12'
+            anndata: '0.12.3'
+          - python: '3.12'
+            anndata: '0.13.4'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - run: pip install -e '.[test]'
-      - run: pytest -q
+      - run: pip install -e '.[test]' -r compatibility/anndata-${{ matrix.anndata }}.txt
+      - run: pytest -q --junitxml=.compat-results/python.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-${{ matrix.python }}-anndata-${{ matrix.anndata }}
+          path: .compat-results/python.xml
   seurat:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        anndata: ['0.11.4', '0.12.3', '0.13.4']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install -e '.[test]'
+      - run: pip install -e '.[test]' -r compatibility/anndata-${{ matrix.anndata }}.txt
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
@@ -29,6 +45,10 @@ jobs:
           working-directory: adapters/seurat
           extra-packages: any::testthat
       - run: Rscript adapters/seurat/scripts/run-tests.R
-      - run: Rscript adapters/seurat/scripts/bridge.R .r-tests/bridge
-      - run: python adapters/seurat/scripts/check_bridge.py .r-tests/bridge
-      - run: Rscript examples/seurat/check_reverse.R .r-tests/bridge "$(which python)"
+      - run: Rscript adapters/seurat/scripts/compat-fixtures.R .r-tests/fixtures
+      - run: python scripts/check_compatibility.py --fixtures .r-tests/fixtures --output .compat-results/bridge
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: seurat-anndata-${{ matrix.anndata }}
+          path: .compat-results/bridge/report.json

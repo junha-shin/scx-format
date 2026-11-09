@@ -71,7 +71,10 @@ with sufficient precision to recover the declared numeric value.
 ## AnnData mapping and limits
 
 The schema applies to `obs` and `var` only. Adapters restore values, dtype widths,
-nullability, categorical categories/order and missing masks. H5AD may itself
-convert repeated string columns to categorical during save; comparisons across
-H5AD files use the source H5AD after this serialization. `uns`, `varm`, other
+nullability, categorical categories/order and missing masks. The SCX CLI disables
+H5AD's automatic string-to-categorical conversion. For cross-version H5AD
+compatibility it writes missing text using nullable-string encoding, with a
+warning: object/str storage may become pandas `string` without losing values or
+missing masks. AnnData's writing option is scoped to that write. Direct external
+H5AD writes may still use AnnData defaults; see the compatibility tables. `uns`, `varm`, other
 unsupported objects and metadata column-index names are outside this extension.

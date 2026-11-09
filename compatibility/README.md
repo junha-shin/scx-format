@@ -1,0 +1,112 @@
+# Compatibility and support matrix
+
+This document defines the tested SCX v0.1-alpha / metadata-schema 1.0 profile.
+The Python package declares Python >= 3.10 and AnnData >= 0.11.4; that minimum
+does not imply every newer release and dependency combination has been tested.
+Exact environment constraints below are the reproducible supported test profiles.
+
+## Versions and evidence
+
+| AnnData | Python in CI | pandas | NumPy | SciPy | Zarr | Assay forms tested | Local PBMC3k result |
+|---|---|---|---|---|---|---|---|
+| 0.11.4 | 3.10 (unit); 3.12 (bridge) | 2.2.3 | 2.2.6 | 1.15.3 | 2.18.7 | legacy Assay + Assay5 | Both pass; matrix error 0 |
+| 0.12.3 | 3.12 | 2.2.3 | 2.2.6 | 1.15.3 | 2.18.7 | legacy Assay + Assay5 | Both pass; matrix error 0 |
+| 0.13.4 | 3.12 | 3.0.6 | 2.5.3 | 1.18.1 | 3.4.0 | legacy Assay + Assay5 | Both pass; matrix error 0 |
+
+| R / Seurat combination | Verification / scope |
+|---|---|
+| R 4.5.2, SeuratObject 5.4.0, Matrix 1.7.4, jsonlite 2.0.0 | Local Windows Assay/Assay5 unit tests and PBMC3k bridge across all three AnnData environments |
+| Seurat 5.6.0 | Generated the recorded PBMC3k normalized matrix, PCA/UMAP and NN/SNN graphs; both assay forms retain those supported values |
+| Ubuntu CI R/SeuratObject | CI resolves installed R dependencies and records their exact versions in each bridge artifact |
+| Seurat 3/4 runtime or SeuratObject < 5 | Not supported/tested; legacy **Assay class** support is tested under SeuratObject 5, not an old Seurat runtime |
+| Other AnnData/dependency versions | Not qualified by this matrix; no guarantee is inferred from an installation satisfying the minimum |
+
+`pbmc-anndata-*.json` are measured local reports for 2,700 cells × 13,714 genes.
+They include dependency versions, source RDS hashes, matrix errors, axis order,
+metadata checks and the reverse Seurat assay-class check. Both forms are exported
+from the same genuine PBMC3k Seurat analysis; conversion to legacy Assay first
+asserts that counts, normalized values and feature metadata have not changed.
+The original 10x archive provenance is in [the real-data example](../examples/seurat/README.md).
+
+CI has three Python environment jobs and three bridge jobs. Every bridge job
+tests both assay classes, H5AD serialization, CELL × FEATURE orientation on a
+nonsquare matrix, an asymmetric graph, dtype/missing/category preservation and
+AnnData → SCX → Seurat import into the requested assay class. Small fixtures run
+in CI; PBMC3k reports record the separate local real-data validation. CI uploads
+JUnit and per-environment JSON artifacts. Recorded success is evidence for the
+listed runs, not a performance or general biological correctness claim.
+Local Python suites passed 42 tests per AnnData environment; R tests passed 24
+assertions, including both assay classes. CI repeats those checks on Ubuntu.
+
+## Dtype support
+
+| Metadata dtype | Python / SCX | Native R export | R import |
+|---|---|---|---|
+| Signed/unsigned integer widths 8/16/32/64 | Preserved; nullable Int/UInt variants retain missing mask | integer → int32 or Int32 | signed <=32, unsigned <=16 → integer; INT_MIN rejected; wider/uint32/uint64 rejected |
+| float32/64; nullable Float32/64 | Width, values and missing mask preserved in SCX | double → float64; NA/NaN → null | native double; original width/nullable-wrapper provenance is not retained |
+| bool / boolean | Values and missing mask preserved | logical → bool/boolean | logical |
+| object/string/str text | Empty, literal `null` and missing distinct; Python/Arrow storage backend not portable | character → object text | character |
+| categorical | Values, category dtype, order and unused categories preserved | factor/ordered factor → character-category schema | character categories → factor; numeric/boolean category labels rejected |
+| datetime, complex, bytes, arbitrary/mixed objects | Unsupported metadata types; export rejected | Date/POSIXt, list, custom numeric/bit64 classes rejected | Unknown or nonrepresentable schema types rejected |
+
+H5AD is a separate transport constraint: AnnData 0.11/0.12 cannot serialize an
+object column with missing strings directly. The CLI stores missing text using
+the native H5AD nullable-string encoding, enables the AnnData setting only within
+the write, and warns about the storage dtype conversion. Values and missing masks
+are preserved; pandas object/str storage may become pandas `string` after H5AD.
+No numeric-to-string conversion or string-to-categorical conversion is applied.
+In-memory SCX import retains the declared logical schema dtype. H5AD readers may
+also infer a different string storage dtype for category labels, while retaining
+category values/order. NaN payload bits and distinct Python missing sentinels are
+not part of the schema.
+
+## Exchanged and omitted data
+
+| Item | Supported mapping | Limit / omission |
+|---|---|---|
+| counts | Seurat FEATURE × CELL transposed to SCX CELL × FEATURE; AnnData `layers['counts']` | One exact layer, nonnegative finite values |
+| normalized | Seurat `data` transposed; SCX normalized → AnnData X | Optional; otherwise X uses counts |
+| obs / var | Typed cell/feature metadata, canonical ID order | Single feature space; metadata index IDs are text |
+| embedding | Named Seurat reduction → CELL × COMPONENT → `obsm[name]` | Component labels/Seurat keys regenerated; loadings omitted |
+| cell graph | CELL × CELL → `obsp[name]`; directed entries retained | No transpose, no graph recomputation |
+| additional assays/layers, scale.data, raw | Not in profile | Explicit assay/layer selection required; unsupported objects omitted with warning |
+| identities, command history, misc / uns, varm, varp, images/spatial | Not in profile | Keep source Seurat/H5AD if these internals are needed |
+
+## Error conditions
+
+| Trigger | Result |
+|---|---|
+| Existing export directory or H5AD file | Refuse overwrite; failed staged export does not publish a partial result |
+| Missing counts, split layers without an exact selected layer | Fail; explicitly JoinLayers/select a layer first |
+| Missing default normalized layer | R exporter warns and writes counts-only; normalized_layer=NULL selects counts-only intentionally |
+| Duplicate/empty IDs, metadata headers, reserved ID column | Fail |
+| Partial/extra cell or feature coverage, reduction/graph from another assay | Fail; matching complete axes are reordered explicitly |
+| Negative/nonfinite counts, nonfinite normalized/embedding/graph values | Fail |
+| Unknown manifest/schema version, unsafe/missing paths, wrong dimensions or malformed typed values | Validator rejects before import |
+| Numeric overflow, invalid bool/category codes, null in nonnullable integer/bool | Fail instead of coercion |
+| Unsupported metadata class, missing factor level, unsafe object name | Export fails; no output directory published |
+| R cannot represent dtype or Seurat rewrites feature IDs | Import fails explicitly |
+| Seurat assay class requested for import | `assay_class='Assay5'` (default) or `'Assay'`; independent of global Seurat options |
+
+## Reproduce and extend the matrix
+
+Run from the repository root with R dependencies from the adapter README:
+
+```sh
+pip install -e '.[test]' -r compatibility/anndata-0.11.4.txt
+pytest -q
+Rscript adapters/seurat/scripts/compat-fixtures.R .r-tests/fixtures
+python scripts/check_compatibility.py --fixtures .r-tests/fixtures --output .compat-results/0.11.4
+```
+
+Use separate environments and fresh output directories for each constraints
+file. For the real-data matrix, first run the Seurat PBMC3k example, then:
+
+```sh
+Rscript adapters/seurat/scripts/compat-fixtures.R .r-tests/pbmc-fixtures examples/seurat/output/source.rds
+python scripts/check_compatibility.py --fixtures .r-tests/pbmc-fixtures --output .compat-results/pbmc-0.11.4 --dataset PBMC3k
+```
+
+Repeat the Python command under each pinned environment. The R fixtures are
+immutable inputs; each run copies them to a fresh output. Changing dependencies
+requires a new report and CI check before expanding this table's claims.

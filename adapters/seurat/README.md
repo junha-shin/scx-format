@@ -10,6 +10,8 @@ source("adapters/seurat/R/scx.R")
 write_scx_seurat(pbmc, "pbmc.scx", assay = "RNA")
 # Import also requires Python with scx-format[anndata] installed.
 restored <- read_scx_seurat("pbmc.scx", python = "/path/to/python")
+# Explicit legacy output; independent of Seurat.object.assay.version option.
+legacy <- read_scx_seurat("pbmc.scx", python = "/path/to/python", assay_class = "Assay")
 ```
 
 Exports require a new destination and stage all files before publishing. Run
@@ -66,6 +68,9 @@ types. It rejects int64/uint32/uint64 types rather than silently round them, and
 rejects INT_MIN (R reserves its bit pattern for NA). Numeric/boolean category
 labels are rejected on import because R factor levels must be character.
 These import limits do not affect native R → SCX → AnnData dtype preservation.
+
+The [compatibility tables](../../compatibility/README.md) distinguish legacy
+Assay class support under SeuratObject 5 from the untested Seurat 4 runtime.
 
 Active identities, additional assays/layers, feature loadings, scaled values,
 command history, images and arbitrary analysis settings are not in this MVP;

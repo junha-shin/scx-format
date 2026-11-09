@@ -17,6 +17,9 @@ scx to-h5ad output.scx restored.h5ad
 
 The [Seurat adapter MVP](adapters/seurat/README.md) supports single-assay R import/export, typed metadata, embeddings and cell graphs. It transposes FEATURE × CELL expression layers at the boundary. See the [Seurat PBMC3k validation](examples/seurat/README.md) for real-data reproduction and results.
 
+See [compatibility and support tables](compatibility/README.md) for verified
+AnnData environments, legacy Assay/Assay5, dtype mappings, omissions and errors.
+
 ## Development
 
 See [PBMC3k validation](examples/pbmc3k/README.md) for a reproducible real-data

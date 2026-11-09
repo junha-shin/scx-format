@@ -2,7 +2,9 @@ args <- commandArgs(trailingOnly = TRUE)
 stopifnot(length(args) == 2L)
 source("adapters/seurat/R/scx.R")
 source_object <- readRDS(file.path(args[1], "source.rds"))
-restored <- read_scx_seurat(file.path(args[1], "ann.scx"), python = args[2])
+assay_class <- class(source_object[["RNA"]])[1]
+restored <- read_scx_seurat(file.path(args[1], "ann.scx"), python = args[2], assay_class = assay_class)
+stopifnot(inherits(restored[["RNA"]], assay_class))
 stopifnot(identical(colnames(source_object), colnames(restored)), identical(rownames(source_object), rownames(restored)))
 for (pair in list(list(source_object[[]], restored[[]]), list(source_object[["RNA"]][[]], restored[["RNA"]][[]]))) {
   comparison <- all.equal(pair[[1]], pair[[2]], tolerance = 0)

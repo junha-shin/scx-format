@@ -8,7 +8,8 @@ write_scx_seurat(object, path, assay = SeuratObject::DefaultAssay(object),
   counts_layer = "counts", normalized_layer = "data",
   reductions = SeuratObject::Reductions(object),
   graphs = SeuratObject::Graphs(object))
-read_scx_seurat(path, assay = "RNA", python = Sys.which("python"))
+read_scx_seurat(path, assay = "RNA", python = Sys.which("python"),
+  assay_class = c("Assay5", "Assay"))
 }
 \arguments{
 \item{object}{A Seurat object using SeuratObject version 5 or later.}
@@ -19,6 +20,7 @@ read_scx_seurat(path, assay = "RNA", python = Sys.which("python"))
 \item{reductions}{Names of cell reductions to export, or character() to omit.}
 \item{graphs}{Names of cell graphs to export, or character() to omit.}
 \item{python}{Python executable with scx-format installed, used for validation.}
+\item{assay_class}{Explicit output assay class: Assay5 (default) or legacy Assay.}
 }
 \value{Export invisibly returns the output path; import returns a Seurat object.}
 \details{Metadata use schema 1.0 with native R type mappings. Unsupported classes and unsafe integer imports fail explicitly. Additional assays, identities, scaled layers, feature loadings and analysis history are not exchanged. See the repository adapter README for the mapping and limits.}

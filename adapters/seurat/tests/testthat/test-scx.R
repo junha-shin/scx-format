@@ -1,7 +1,8 @@
-tiny_seurat <- function() {
+tiny_seurat <- function(assay_class = "Assay5") {
   counts <- Matrix::Matrix(matrix(c(1, 0, 3, 0, 2, 4), 3, 2), sparse = TRUE)
   dimnames(counts) <- list(c("g1", "g2", "g3"), c("c1", "c2"))
-  object <- SeuratObject::CreateSeuratObject(counts)
+  assay <- if (assay_class == "Assay") SeuratObject::CreateAssayObject(counts = counts) else SeuratObject::CreateAssay5Object(counts = counts)
+  object <- SeuratObject::CreateSeuratObject(assay)
   SeuratObject::LayerData(object, layer = "data") <- log1p(counts)
   object$integer <- c(1L, NA_integer_)
   object$double <- c(0.12345678901234567, 1.234567890123456e-30)
@@ -71,4 +72,14 @@ testthat::test_that("symmetric and binary graphs use explicit numeric general fo
 testthat::test_that("JSON metadata preserves binary64 precision", {
   x <- c(0.12345678901234567, 1.234567890123456e-30, 1.234567890123456e30)
   testthat::expect_identical(jsonlite::fromJSON(.scx_json(x)), x)
+})
+
+for (assay_class in c("Assay", "Assay5")) testthat::test_that(paste(assay_class, "exports the same canonical data"), {
+  object <- tiny_seurat(assay_class)
+  testthat::expect_s4_class(object[["RNA"]], assay_class)
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE))
+  testthat::expect_warning(write_scx_seurat(object, root), "SCX exports")
+  con <- gzfile(file.path(root, "matrices/counts.mtx.gz"), "rt")
+  x <- Matrix::readMM(con); close(con)
+  testthat::expect_equal(as.matrix(x), unname(as.matrix(Matrix::t(SeuratObject::LayerData(object, layer = "counts")))))
 })

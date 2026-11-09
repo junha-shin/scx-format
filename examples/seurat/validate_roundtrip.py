@@ -41,7 +41,7 @@ def expected_metadata(columns, ids, h5ad=False):
         else:
             nullable = any(x is None for x in values)
             dtype = {'integer': 'Int32' if nullable else 'int32', 'double': 'float64',
-                     'logical': 'boolean' if nullable else 'bool', 'character': 'object'}[column['r_type']]
+                     'logical': 'boolean' if nullable else 'bool', 'character': 'string' if h5ad and nullable else 'object'}[column['r_type']]
             result[column['name']] = pd.Series(values, dtype=dtype).array
     return result
 

@@ -1,0 +1,133 @@
+{
+  "dataset": "PBMC3k",
+  "python": "3.12.14",
+  "platform": "Windows",
+  "versions": {
+    "scx-format": "0.1.0a3",
+    "anndata": "0.11.4",
+    "pandas": "2.2.3",
+    "numpy": "2.2.6",
+    "scipy": "1.15.3",
+    "h5py": "3.16.0",
+    "zarr": "2.18.7"
+  },
+  "R": {
+    "R": "R version 4.5.2 (2025-10-31 ucrt)",
+    "SeuratObject": "5.4.0",
+    "Matrix": "1.7.4",
+    "jsonlite": "2.0.0"
+  },
+  "cases": {
+    "Assay": {
+      "cell_order": true,
+      "feature_order": true,
+      "counts": {
+        "shape": [
+          2700,
+          13714
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "normalized": {
+        "shape": [
+          2700,
+          13714
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "pca": {
+        "shape": [
+          2700,
+          30
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "umap": {
+        "shape": [
+          2700,
+          2
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "RNA_nn": {
+        "shape": [
+          2700,
+          2700
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "RNA_snn": {
+        "shape": [
+          2700,
+          2700
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "metadata_values_dtypes_categories_missing": true,
+      "reverse_assay_class_and_data": true,
+      "source_snapshot_sha256": "c211f196e8f741735ad6fdf346b4200e1942ef4c4aad64eeb022815af7a31dc5"
+    },
+    "Assay5": {
+      "cell_order": true,
+      "feature_order": true,
+      "counts": {
+        "shape": [
+          2700,
+          13714
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "normalized": {
+        "shape": [
+          2700,
+          13714
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "pca": {
+        "shape": [
+          2700,
+          30
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "umap": {
+        "shape": [
+          2700,
+          2
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "RNA_nn": {
+        "shape": [
+          2700,
+          2700
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "RNA_snn": {
+        "shape": [
+          2700,
+          2700
+        ],
+        "max_absolute_error": 0.0,
+        "passed": true
+      },
+      "metadata_values_dtypes_categories_missing": true,
+      "reverse_assay_class_and_data": true,
+      "source_snapshot_sha256": "69d1d7b8218e682247fa7085f5d907b48cb8b5833275c69c0fc0ef4653e505ae"
+    }
+  },
+  "passed": true
+}
