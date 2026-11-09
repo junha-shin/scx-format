@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 import re
 
 import pandas as pd
+import numpy as np
 from scipy import sparse
 from scipy.io import mmread, mmwrite
 
@@ -90,5 +91,10 @@ def read_matrix(path: Path) -> sparse.csr_matrix:
 
 def write_matrix(path: Path, matrix) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    matrix = sparse.coo_matrix(matrix)
+    # Promote float32 before requesting 17 digits. Some SciPy writers emit
+    # embedded NUL bytes when precision exceeds the native float32 buffer.
+    if np.issubdtype(matrix.dtype, np.floating):
+        matrix = matrix.astype(np.float64)
     with gzip.open(path, "wb") as handle:
-        mmwrite(handle, sparse.coo_matrix(matrix), symmetry="general")
+        mmwrite(handle, matrix, symmetry="general", precision=17)

@@ -12,3 +12,6 @@ uv.lock
 .stability-tests/
 .stability-tests-final/
 .test-review-tmp/
+examples/pbmc3k/data/
+examples/pbmc3k/output*/
+.precision-tests/

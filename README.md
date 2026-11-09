@@ -19,6 +19,9 @@ Seurat import/export is planned, not implemented. A Seurat adapter will transpos
 
 ## Development
 
+See [PBMC3k validation](examples/pbmc3k/README.md) for a reproducible real-data
+H5AD → SCX → H5AD example, pinned source checksum and recorded results.
+
 Exports refuse existing destinations and validate a temporary dataset before publishing. The manifest begins with `# scx_version=0.1-alpha`; unversioned draft datasets need regeneration. Export warnings identify metadata dtype loss and unsupported omitted objects. GitHub Actions runs the tests on Python 3.10 and 3.12.
 
 ```sh

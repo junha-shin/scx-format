@@ -82,3 +82,30 @@ def test_loss_warning(tmp_path):
     a.obs['batch'] = [1, 2]
     with pytest.warns(UserWarning, match='metadata are text'):
         from_anndata(a, tmp_path/'data.scx')
+
+
+def test_nullable_metadata_round_trip(tmp_path):
+    from scx.anndata import to_anndata
+    a = sample()
+    a.obs['group'] = pd.Categorical(['a', None])
+    a.obs['number'] = pd.array([1, None], dtype='Int64')
+    a.obs['flag'] = pd.array([True, None], dtype='boolean')
+    a.var['score'] = np.array([0.12345678, 1.2345678, 2.3456789], dtype=np.float32)
+    with pytest.warns(UserWarning, match='metadata are text'):
+        from_anndata(a, tmp_path/'nullable.scx')
+    restored = to_anndata(tmp_path/'nullable.scx')
+    assert restored.obs['group'].tolist() == ['a', '']
+    assert restored.obs['number'].tolist() == ['1', '']
+    assert restored.obs['flag'].tolist() == ['True', '']
+    assert restored.var['score'].tolist() == a.var['score'].astype(str).tolist()
+
+
+def test_float32_text_precision(tmp_path):
+    from scx.anndata import to_anndata
+    a = sample()
+    a.X = sparse.csr_matrix(np.array([[1.2345678, 0, 2.3456789], [0, 3.456789, 0]], dtype=np.float32))
+    a.obsm['X_umap'] = np.array([[1.2345678, 3.456789], [2.3456789, 0.12345678]], dtype=np.float32)
+    from_anndata(a, tmp_path/'precision.scx')
+    restored = to_anndata(tmp_path/'precision.scx')
+    np.testing.assert_array_equal(restored.X.toarray(), a.X.toarray().astype(np.float64))
+    np.testing.assert_allclose(restored.obsm['X_umap'], a.obsm['X_umap'].astype(np.float64), rtol=0, atol=1e-15)

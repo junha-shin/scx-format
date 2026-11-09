@@ -1,0 +1,136 @@
+{
+  "source_url": "https://falexwolf.de/data/pbmc3k_raw.h5ad",
+  "source_sha256": "89a96f1beaa2dd83a687666d3f19a4513ac27a2a2d12581fcd77afed7ea653a1",
+  "original_shape": [
+    2700,
+    32738
+  ],
+  "tested_shape": [
+    2700,
+    13714
+  ],
+  "seed": 0,
+  "tolerance": 1e-06,
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26100-SP0",
+  "versions": {
+    "scx-format": "0.1.0a0",
+    "scanpy": "1.11.5",
+    "anndata": "0.13.4",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "umap-learn": "0.5.12",
+    "numba": "0.68.1",
+    "h5py": "3.16.0"
+  },
+  "checks": {
+    "cell_order": true,
+    "feature_order": true,
+    "counts": {
+      "shape": [
+        2700,
+        13714
+      ],
+      "nnz_before": 2282976,
+      "nnz_after": 2282976,
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "normalized": {
+      "shape": [
+        2700,
+        13714
+      ],
+      "nnz_before": 2282976,
+      "nnz_after": 2282976,
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "X_pca": {
+      "shape": [
+        2700,
+        30
+      ],
+      "nnz_before": 81000,
+      "nnz_after": 81000,
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "X_umap": {
+      "shape": [
+        2700,
+        2
+      ],
+      "nnz_before": 5400,
+      "nnz_after": 5400,
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "connectivities": {
+      "shape": [
+        2700,
+        2700
+      ],
+      "nnz_before": 58118,
+      "nnz_after": 58118,
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "distances": {
+      "shape": [
+        2700,
+        2700
+      ],
+      "nnz_before": 37800,
+      "nnz_after": 37800,
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "metadata_text_values": true
+  },
+  "known_losses": {
+    "uns": [
+      "hvg",
+      "log1p",
+      "neighbors",
+      "pca",
+      "umap"
+    ],
+    "varm": [
+      "PCs"
+    ],
+    "metadata_dtypes": {
+      "before_obs": {
+        "library_size_group": "category",
+        "total_counts": "float32"
+      },
+      "after_obs": {
+        "library_size_group": "category",
+        "total_counts": "category"
+      }
+    }
+  },
+  "commands": [
+    {
+      "command": "from-h5ad",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "<repo>\\src\\scx\\anndata.py:47: UserWarning: SCX metadata are text: dtype, category and missing/empty distinctions are not preserved\n  warnings.warn(\"SCX metadata are text: dtype, category and missing/empty distinctions are not preserved\", UserWarning)\n<repo>\\src\\scx\\anndata.py:49: UserWarning: SCX omits extra layers, uns, varm, varp and raw\n  warnings.warn(\"SCX omits extra layers, uns, varm, varp and raw\", UserWarning)\n"
+    },
+    {
+      "command": "validate",
+      "returncode": 0,
+      "stdout": "Valid SCX: 2700 cells, 13714 features\n",
+      "stderr": ""
+    },
+    {
+      "command": "to-h5ad",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "passed": true
+}

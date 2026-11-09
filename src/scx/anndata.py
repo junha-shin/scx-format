@@ -17,7 +17,9 @@ def _table(frame: pd.DataFrame, key: str) -> pd.DataFrame:
     table.insert(0, key, frame.index.astype(str))
     if table.columns.duplicated().any():
         raise ValueError(f"duplicate metadata column: {key}")
-    return table.fillna("").astype(str)
+    # Convert before filling: categorical/nullable columns reject an empty
+    # string fill value. String dtype also retains float32 display semantics.
+    return table.astype("string").fillna("").astype(str)
 
 
 def from_anndata(adata, root: str | Path) -> None:
@@ -60,6 +62,8 @@ def _from_anndata(adata, root: str | Path) -> None:
         if array.ndim != 2 or not np.issubdtype(array.dtype, np.number):
             warnings.warn(f"Skipping unsupported embedding: {name}", UserWarning)
             continue
+        if np.issubdtype(array.dtype, np.floating):
+            array = array.astype(np.float64)
         table = pd.DataFrame(array, columns=[f"dim_{i+1}" for i in range(array.shape[1])])
         table.insert(0, "cell_id", adata.obs_names.astype(str))
         path = f"embeddings/{name}.tsv.gz"
