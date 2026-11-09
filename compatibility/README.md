@@ -9,7 +9,8 @@ Exact environment constraints below are the reproducible supported test profiles
 
 | AnnData | Python in CI | pandas | NumPy | SciPy | Zarr | Assay forms tested | Local PBMC3k result |
 |---|---|---|---|---|---|---|---|
-| 0.11.4 | 3.10 (unit); 3.12 (bridge) | 2.2.3 | 2.2.6 | 1.15.3 | 2.18.7 | legacy Assay + Assay5 | Both pass; matrix error 0 |
+| 0.11.4 | 3.10 (unit) | 2.2.3 | 1.26.4 | 1.15.3 | 2.18.3 / numcodecs 0.13.1 | Unit suite | PBMC3k uses 3.12 profile below |
+| 0.11.4 | 3.12 (bridge) | 2.2.3 | 2.2.6 | 1.15.3 | 2.18.7 | legacy Assay + Assay5 | Both pass; matrix error 0 |
 | 0.12.3 | 3.12 | 2.2.3 | 2.2.6 | 1.15.3 | 2.18.7 | legacy Assay + Assay5 | Both pass; matrix error 0 |
 | 0.13.4 | 3.12 | 3.0.6 | 2.5.3 | 1.18.1 | 3.4.0 | legacy Assay + Assay5 | Both pass; matrix error 0 |
 
