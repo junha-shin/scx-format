@@ -36,8 +36,9 @@ AnnData → SCX → Seurat import into the requested assay class. Small fixtures
 in CI; PBMC3k reports record the separate local real-data validation. CI uploads
 JUnit and per-environment JSON artifacts. Recorded success is evidence for the
 listed runs, not a performance or general biological correctness claim.
-Local Python suites passed 42 tests per AnnData environment; R tests passed 24
-assertions, including both assay classes. CI repeats those checks on Ubuntu.
+The Python suite includes 45 tests per AnnData environment; R tests include 28
+assertions covering both assay classes. Counts-only selection and dense/CSR/CSC
+Python input are included. CI repeats those checks on Ubuntu.
 
 ## Dtype support
 

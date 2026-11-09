@@ -106,3 +106,18 @@ def test_float32_text_precision(tmp_path):
     restored = to_anndata(tmp_path/'precision.scx')
     np.testing.assert_array_equal(restored.X.toarray(), a.X.toarray().astype(np.float64))
     np.testing.assert_allclose(restored.obsm['X_umap'], a.obsm['X_umap'].astype(np.float64), rtol=0, atol=1e-15)
+
+
+@pytest.mark.parametrize('storage', [np.asarray, sparse.csr_matrix, sparse.csc_matrix])
+def test_counts_only_dense_and_sparse(tmp_path, storage):
+    from scx.anndata import to_anndata
+    a = sample()
+    a.layers['counts'] = storage(np.array([[1., 0., 2.], [0., 3., 0.]]))
+    a.X = None
+    root = tmp_path/'counts.scx'
+    from_anndata(a, root)
+    restored = to_anndata(root)
+    assert restored.shape == (2, 3)
+    assert not (root/'matrices/normalized.mtx.gz').exists()
+    np.testing.assert_array_equal(restored.X.toarray(), [[1, 0, 2], [0, 3, 0]])
+    np.testing.assert_array_equal(restored.layers['counts'].toarray(), restored.X.toarray())

@@ -83,3 +83,12 @@ for (assay_class in c("Assay", "Assay5")) testthat::test_that(paste(assay_class,
   x <- Matrix::readMM(con); close(con)
   testthat::expect_equal(as.matrix(x), unname(as.matrix(Matrix::t(SeuratObject::LayerData(object, layer = "counts")))))
 })
+
+for (assay_class in c("Assay", "Assay5")) testthat::test_that(paste(assay_class, "supports explicit counts-only selection"), {
+  object <- tiny_seurat(assay_class)
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE))
+  testthat::expect_warning(write_scx_seurat(object, root, normalized_layer = NULL,
+                                          reductions = character(), graphs = character()), "SCX exports")
+  manifest <- read.delim(file.path(root, "manifest.tsv"), skip = 1)
+  testthat::expect_setequal(manifest$role, c("cells", "features", "counts", "metadata_schema"))
+})
