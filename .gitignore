@@ -15,3 +15,7 @@ uv.lock
 examples/pbmc3k/data/
 examples/pbmc3k/output*/
 .precision-tests/
+.r-library/
+examples/seurat/data/
+examples/seurat/output*/
+.r-tests/

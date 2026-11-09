@@ -15,7 +15,7 @@ scx to-h5ad output.scx restored.h5ad
 
 `from-h5ad` requires `adata.layers['counts']`; it stores `adata.X` as `normalized` by default. `to-h5ad` restores counts to `layers['counts']`, and sets `X` to normalized when present, otherwise counts. Supported embeddings and cell graphs map to `obsm` and `obsp`. New exports include `metadata.schema.json` to preserve numeric widths, boolean, nullable values, strings and categorical order/unused levels in `obs`/`var`. See [metadata schema 1.0](specification/metadata-schema-v1.md). Arbitrary `uns` values remain outside this alpha round trip.
 
-Seurat import/export is planned, not implemented. A Seurat adapter will transpose its FEATURE × CELL assay layers at the boundary.
+The [Seurat adapter MVP](adapters/seurat/README.md) supports single-assay R import/export, typed metadata, embeddings and cell graphs. It transposes FEATURE × CELL expression layers at the boundary. See the [Seurat PBMC3k validation](examples/seurat/README.md) for real-data reproduction and results.
 
 ## Development
 

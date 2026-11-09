@@ -1,0 +1,225 @@
+# SCX v0.1-alpha, single-assay SeuratObject >= 5 adapter.
+.scx_json <- function(x) as.character(jsonlite::toJSON(x, auto_unbox = TRUE, na = "null", null = "null", digits = 17))
+
+.scx_tsv <- function(x, path) {
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  con <- gzfile(path, "wt", encoding = "UTF-8")
+  on.exit(close(con))
+  write.table(x, con, sep = "\t", row.names = FALSE, quote = TRUE, qmethod = "double", na = "")
+}
+
+.scx_read_tsv <- function(path) {
+  con <- gzfile(path, "rt", encoding = "UTF-8")
+  on.exit(close(con))
+  read.delim(con, check.names = FALSE, stringsAsFactors = FALSE, colClasses = "character",
+             na.strings = NULL, comment.char = "", fill = FALSE)
+}
+
+.scx_mtx <- function(x, path) {
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  x <- methods::as(Matrix::Matrix(x, sparse = TRUE), "generalMatrix")
+  x <- methods::as(methods::as(x, "dMatrix"), "TsparseMatrix")
+  output <- gzfile(path, "wt", encoding = "UTF-8"); on.exit(close(output))
+  # Matrix::writeMM auto-selects pattern/symmetric even for general matrices.
+  # SCX requires numeric coordinate general, including all directed entries.
+  writeLines(c("%%MatrixMarket matrix coordinate real general", "% SCX CELL x FEATURE or CELL x CELL",
+               paste(nrow(x), ncol(x), length(x@x))), output)
+  if (length(x@x)) for (start in seq.int(1L, length(x@x), by = 100000L)) {
+    take <- start:min(start + 99999L, length(x@x))
+    writeLines(paste(x@i[take] + 1L, x@j[take] + 1L, sprintf("%.17g", x@x[take])), output)
+  }
+}
+
+.scx_ids <- function(ids) {
+  if (is.null(ids) || anyNA(ids) || any(!nzchar(ids)) || anyDuplicated(ids) ||
+      any(grepl("[\t\r\n]", ids))) stop("IDs must be unique nonempty text without tabs/newlines")
+}
+
+.scx_name <- function(name) {
+  if (length(name) != 1L || !grepl("^[A-Za-z0-9_.-]+$", name)) stop("unsafe SCX object name")
+}
+
+.scx_meta <- function(frame, ids, key, path) {
+  if (!is.data.frame(frame) || !identical(rownames(frame), ids)) stop("metadata cell/feature axis mismatch")
+  if (anyDuplicated(names(frame)) || any(!nzchar(names(frame))) || key %in% names(frame) ||
+      any(grepl("[\t\r\n]", names(frame)))) stop("invalid or reserved metadata column name")
+  table <- data.frame(ids, check.names = FALSE); names(table) <- key
+  columns <- lapply(names(frame), function(name) {
+    x <- frame[[name]]
+    if (is.factor(x)) {
+      if (anyNA(levels(x))) stop("factor levels must be nonmissing")
+      spec <- list(name = name, dtype = "category", ordered = is.ordered(x),
+                   categories_dtype = "object", categories = as.list(levels(x)))
+      values <- as.integer(x) - 1L
+    } else {
+      dtype <- if (is.integer(x) && !is.object(x)) {
+        if (anyNA(x)) "Int32" else "int32"
+      } else if (is.double(x) && !is.object(x)) {
+        if (any(is.infinite(x))) stop("metadata infinity unsupported")
+        "float64"
+      } else if (is.logical(x) && !is.object(x)) {
+        if (anyNA(x)) "boolean" else "bool"
+      } else if (is.character(x) && !is.object(x)) "object" else stop("unsupported R metadata class: ", paste(class(x), collapse = "/"))
+      spec <- list(name = name, dtype = dtype)
+      values <- x
+    }
+    table[[name]] <<- vapply(seq_along(values), function(i) .scx_json(values[i]), character(1))
+    spec
+  })
+  .scx_tsv(table, path)
+  list(index_name = NULL, columns = columns)
+}
+
+.scx_aligned <- function(x, rows, cols = NULL) {
+  if (!setequal(rownames(x), rows) || nrow(x) != length(rows)) stop("row axis does not cover canonical IDs")
+  if (is.null(cols)) return(x[rows, , drop = FALSE])
+  if (!setequal(colnames(x), cols) || ncol(x) != length(cols)) stop("column axis does not cover canonical IDs")
+  x[rows, cols, drop = FALSE]
+}
+
+#' Export a single Seurat assay to a new SCX directory.
+#' @export
+write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(object),
+                             counts_layer = "counts", normalized_layer = "data",
+                             reductions = SeuratObject::Reductions(object),
+                             graphs = SeuratObject::Graphs(object)) {
+  if (!inherits(object, "Seurat")) stop("object must be Seurat")
+  if (file.exists(path) || dir.exists(path)) stop("output already exists")
+  if (!assay %in% SeuratObject::Assays(object)) stop("unknown assay")
+  layers <- SeuratObject::Layers(object[[assay]], search = NA)
+  if (!counts_layer %in% layers) stop("exact counts layer required; join split layers explicitly with JoinLayers first")
+  counts <- SeuratObject::LayerData(object[[assay]], layer = counts_layer)
+  features <- rownames(counts); cells <- colnames(counts)
+  .scx_ids(cells); .scx_ids(features)
+  if (!length(cells) || !length(features)) stop("empty expression matrix")
+  if (any(!is.finite(counts)) || any(counts < 0)) stop("counts must be finite and nonnegative")
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  stage <- tempfile(".scx-", tmpdir = dirname(path)); dir.create(stage)
+  on.exit(unlink(stage, recursive = TRUE), add = TRUE)
+  entries <- data.frame(path = c("cells.tsv.gz", "features.tsv.gz", "matrices/counts.mtx.gz", "metadata.schema.json"),
+                        role = c("cells", "features", "counts", "metadata_schema"),
+                        name = c("cells", "features", "counts", "metadata"))
+  schema <- list(schema_version = "1.0",
+                 cells = .scx_meta(object[[]][cells, , drop = FALSE], cells, "cell_id", file.path(stage, "cells.tsv.gz")),
+                 features = .scx_meta(object[[assay]][[]][features, , drop = FALSE], features, "feature_id", file.path(stage, "features.tsv.gz")))
+  writeLines(.scx_json(schema), file.path(stage, "metadata.schema.json"), useBytes = TRUE)
+  .scx_mtx(Matrix::t(counts), file.path(stage, "matrices/counts.mtx.gz"))
+  if (!is.null(normalized_layer)) {
+    if (normalized_layer %in% layers) {
+      normalized <- .scx_aligned(SeuratObject::LayerData(object[[assay]], layer = normalized_layer), features, cells)
+      if (any(!is.finite(normalized))) stop("normalized matrix must be finite")
+      .scx_mtx(Matrix::t(normalized), file.path(stage, "matrices/normalized.mtx.gz"))
+      entries <- rbind(entries, data.frame(path = "matrices/normalized.mtx.gz", role = "normalized", name = "normalized"))
+    } else warning("normalized layer absent; exporting counts only")
+  }
+  for (name in reductions) {
+    .scx_name(name)
+    reduction <- object[[name]]
+    if (SeuratObject::DefaultAssay(reduction) != assay) stop("embedding belongs to a different assay: ", name)
+    x <- .scx_aligned(SeuratObject::Embeddings(reduction), cells)
+    if (!ncol(x) || !is.numeric(x) || any(!is.finite(x))) stop("invalid embedding")
+    table <- data.frame(cell_id = cells, x, check.names = FALSE)
+    names(table) <- c("cell_id", paste0("dim_", seq_len(ncol(x))))
+    relative <- paste0("embeddings/", name, ".tsv.gz")
+    # Explicit 17-digit formatting before write.table (which formats doubles differently).
+    table[-1] <- lapply(table[-1], function(v) sprintf("%.17g", v))
+    .scx_tsv(table, file.path(stage, relative))
+    entries <- rbind(entries, data.frame(path = relative, role = "embedding", name = name))
+  }
+  for (name in graphs) {
+    .scx_name(name)
+    graph <- object[[name]]
+    if (SeuratObject::DefaultAssay(graph) != assay) stop("graph belongs to a different assay: ", name)
+    x <- .scx_aligned(graph, cells, cells)
+    if (any(!is.finite(x))) stop("graph must be finite")
+    relative <- paste0("graphs/", name, ".mtx.gz")
+    .scx_mtx(x, file.path(stage, relative))
+    entries <- rbind(entries, data.frame(path = relative, role = "cell_graph", name = name))
+  }
+  con <- file(file.path(stage, "manifest.tsv"), "wt", encoding = "UTF-8")
+  writeLines("# scx_version=0.1-alpha", con)
+  write.table(entries, con, sep = "\t", row.names = FALSE, quote = FALSE)
+  close(con)
+  warning("SCX exports one assay and selected layers, metadata, embeddings and graphs; identities, other layers, loadings and analysis history are not exported")
+  if (file.exists(path) || !file.rename(stage, path)) stop("could not publish SCX output")
+  invisible(path)
+}
+
+#' Import an SCX dataset via the Python validator and typed metadata decoder.
+#' @export
+read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python")) {
+  if (!nzchar(python)) stop("Python with scx-format installed is required for validated import")
+  status <- system2(python, c("-m", "scx.cli", "validate", shQuote(normalizePath(path, winslash = "/", mustWork = TRUE))))
+  if (!identical(status, 0L)) stop("SCX validation failed")
+  manifest <- read.delim(file.path(path, "manifest.tsv"), skip = 1, stringsAsFactors = FALSE, check.names = FALSE)
+  schema <- if ("metadata_schema" %in% manifest$role) jsonlite::fromJSON(file.path(path, "metadata.schema.json"), simplifyVector = FALSE) else NULL
+  cells <- .scx_read_tsv(file.path(path, "cells.tsv.gz"))
+  features <- .scx_read_tsv(file.path(path, "features.tsv.gz"))
+  ids <- cells[[1]]; genes <- features[[1]]
+  meta <- .scx_decode_frame(cells, if (is.null(schema)) NULL else schema$cells)
+  feature_meta <- .scx_decode_frame(features, if (is.null(schema)) NULL else schema$features)
+  load_matrix <- function(relative) {
+    con <- gzfile(file.path(path, relative), "rt"); on.exit(close(con))
+    methods::as(Matrix::readMM(con), "CsparseMatrix")
+  }
+  counts <- Matrix::t(load_matrix("matrices/counts.mtx.gz")); dimnames(counts) <- list(genes, ids)
+  object <- SeuratObject::CreateSeuratObject(counts, assay = assay, meta.data = meta)
+  if (!identical(rownames(object[[assay]]), genes)) stop("Seurat altered feature IDs; import refused")
+  # Replace Seurat's generated metadata to retain exactly the SCX columns.
+  object@meta.data <- meta
+  if (ncol(feature_meta)) object[[assay]] <- SeuratObject::AddMetaData(object[[assay]], feature_meta)
+  for (i in seq_len(nrow(manifest))) {
+    entry <- manifest[i, ]
+    if (entry$role == "normalized") {
+      x <- Matrix::t(load_matrix(entry$path)); dimnames(x) <- list(genes, ids)
+      SeuratObject::LayerData(object, assay = assay, layer = "data") <- x
+    } else if (entry$role == "embedding") {
+      table <- .scx_read_tsv(file.path(path, entry$path))
+      x <- matrix(as.numeric(as.matrix(table[-1])), nrow = length(ids)); rownames(x) <- ids
+      key <- paste0("SCX", i, "_"); colnames(x) <- paste0(key, seq_len(ncol(x)))
+      object[[entry$name]] <- SeuratObject::CreateDimReducObject(x, assay = assay, key = key)
+    } else if (entry$role == "cell_graph") {
+      x <- load_matrix(entry$path); dimnames(x) <- list(ids, ids)
+      graph <- SeuratObject::as.Graph(x); SeuratObject::DefaultAssay(graph) <- assay
+      object[[entry$name]] <- graph
+    }
+  }
+  object
+}
+
+.scx_decode_frame <- function(table, spec) {
+  frame <- data.frame(row.names = table[[1]])
+  if (is.null(spec)) {
+    warning("Legacy SCX metadata have no dtype schema; loading as text")
+    for (name in names(table)[-1]) frame[[name]] <- table[[name]]
+    return(frame)
+  }
+  convert <- function(values, dtype) {
+    missing <- vapply(values, is.null, logical(1))
+    if (dtype %in% c("object", "str", "string")) {
+      x <- rep(NA_character_, length(values))
+    } else if (dtype %in% c("bool", "boolean")) {
+      x <- rep(NA, length(values))
+    } else if (dtype %in% c("int8", "int16", "int32", "Int8", "Int16", "Int32", "uint8", "uint16", "UInt8", "UInt16")) {
+      x <- rep(NA_integer_, length(values))
+      if (any(vapply(values[!missing], function(v) v <= -.Machine$integer.max - 1, logical(1)))) stop("R cannot represent INT_MIN without losing missingness")
+    } else if (dtype %in% c("float32", "float64", "Float32", "Float64")) {
+      x <- rep(NA_real_, length(values))
+    } else stop("SCX dtype not safely representable in native R: ", dtype)
+    x[!missing] <- unlist(values[!missing], use.names = FALSE)
+    if (is.integer(x)) x <- as.integer(x)
+    x
+  }
+  for (column in spec$columns) {
+    values <- lapply(table[[column$name]], jsonlite::fromJSON, simplifyVector = FALSE)
+    if (column$dtype == "category") {
+      levels <- convert(column$categories, column$categories_dtype)
+      codes <- vapply(values, function(x) if (is.null(x)) NA_integer_ else as.integer(x) + 1L, integer(1))
+      # R factors have character levels; numeric categories cannot retain their type.
+      if (!is.character(levels)) stop("numeric/boolean categorical levels are unsupported by R factors")
+      x <- structure(codes, levels = levels, class = if (column$ordered) c("ordered", "factor") else "factor")
+    } else x <- convert(values, column$dtype)
+    frame[[column$name]] <- x
+  }
+  frame
+}

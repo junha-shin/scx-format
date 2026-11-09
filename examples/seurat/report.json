@@ -1,0 +1,84 @@
+{
+  "source_url": "https://cf.10xgenomics.com/samples/cell-exp/1.1.0/pbmc3k/pbmc3k_filtered_gene_bc_matrices.tar.gz",
+  "source_sha256": "847d6ebd9a1ec9a768f2be7e40ca42cbfe75ebeb6d76a4c24167041699dc28b5",
+  "tested_shape": [
+    2700,
+    13714
+  ],
+  "R": "R version 4.5.2 (2025-10-31 ucrt)",
+  "R_versions": {
+    "Seurat": "5.6.0",
+    "SeuratObject": "5.4.0",
+    "Matrix": "1.7.4",
+    "jsonlite": "2.0.0"
+  },
+  "python": "3.12.14",
+  "python_versions": {
+    "scx-format": "0.1.0a2",
+    "anndata": "0.13.4",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "scipy": "1.18.1"
+  },
+  "seed": 42,
+  "checks": {
+    "cell_order": true,
+    "feature_order": true,
+    "counts": {
+      "shape": [
+        2700,
+        13714
+      ],
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "normalized": {
+      "shape": [
+        2700,
+        13714
+      ],
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "pca": {
+      "shape": [
+        2700,
+        30
+      ],
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "umap": {
+      "shape": [
+        2700,
+        2
+      ],
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "RNA_nn": {
+      "shape": [
+        2700,
+        2700
+      ],
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "RNA_snn": {
+      "shape": [
+        2700,
+        2700
+      ],
+      "max_absolute_error": 0.0,
+      "passed": true
+    },
+    "metadata_values_dtypes_categories_missing": true,
+    "AnnData_SCX_Seurat_reverse": true
+  },
+  "passed": true,
+  "limitations": [
+    "single assay",
+    "R native dtype mapping",
+    "no identities, loadings or analysis history"
+  ]
+}

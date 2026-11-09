@@ -24,4 +24,4 @@ The adapter takes counts from `layers['counts']`; `X` maps to normalized. Typed 
 
 ## Planned
 
-Seurat support will transpose assay matrices from FEATURE × CELL to the canonical CELL × FEATURE orientation. Multi-assay, multiome, spatial data, and arbitrary object serialization are outside v0.1-alpha.
+The Seurat MVP adapter transposes assay matrices from FEATURE × CELL to the canonical CELL × FEATURE orientation and uses metadata schema 1.0 with explicit native R type mappings. Multi-assay, multiome, spatial data, and arbitrary object serialization are outside v0.1-alpha.

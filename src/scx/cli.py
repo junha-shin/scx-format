@@ -36,7 +36,7 @@ def main(argv=None) -> int:
             output.parent.mkdir(parents=True, exist_ok=True)
             with tempfile.TemporaryDirectory(prefix=".scx-h5ad-", dir=output.parent) as stage:
                 temporary = Path(stage) / "output.h5ad"
-                to_anndata(args.input).write_h5ad(temporary)
+                to_anndata(args.input).write_h5ad(temporary, convert_strings_to_categoricals=False)
                 # Hard-link creation fails atomically if another writer created output.
                 os.link(temporary, output)
     except (ValueError, OSError, ImportError) as exc:

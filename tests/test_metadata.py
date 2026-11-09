@@ -95,3 +95,13 @@ def test_typed_h5ad_cli(tmp_path):
     main(['from-h5ad', str(source), str(folder)])
     main(['to-h5ad', str(folder), str(target)])
     pd.testing.assert_frame_equal(read_h5ad(source).obs, read_h5ad(target).obs, check_exact=True)
+
+
+def test_h5ad_preserves_repeated_string_dtype(tmp_path):
+    from anndata import read_h5ad
+    from scx.cli import main
+    a = sample()
+    a.obs['text'] = np.array(['same', 'same'], dtype=object)
+    from_anndata(a, tmp_path/'data.scx')
+    main(['to-h5ad', str(tmp_path/'data.scx'), str(tmp_path/'out.h5ad')])
+    pd.testing.assert_frame_equal(read_h5ad(tmp_path/'out.h5ad').obs, a.obs)
