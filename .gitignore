@@ -9,3 +9,6 @@ build/
 *.scx/
 .uv-cache/
 uv.lock
+.stability-tests/
+.stability-tests-final/
+.test-review-tmp/

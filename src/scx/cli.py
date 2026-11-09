@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
+import tempfile
+import os
 from .validate import validate
 
 
@@ -27,7 +30,15 @@ def main(argv=None) -> int:
             from_anndata(ad.read_h5ad(args.input), args.output)
         else:
             from .anndata import to_anndata
-            to_anndata(args.input).write_h5ad(args.output)
+            output = Path(args.output)
+            if output.exists():
+                raise FileExistsError(f"output already exists: {output}")
+            output.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryDirectory(prefix=".scx-h5ad-", dir=output.parent) as stage:
+                temporary = Path(stage) / "output.h5ad"
+                to_anndata(args.input).write_h5ad(temporary)
+                # Hard-link creation fails atomically if another writer created output.
+                os.link(temporary, output)
     except (ValueError, OSError, ImportError) as exc:
         parser.exit(1, f"scx: {exc}\n")
     return 0

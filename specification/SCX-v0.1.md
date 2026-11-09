@@ -2,6 +2,10 @@
 
 Status: draft. Scope: one scRNA-seq feature space.
 
+The manifest MUST begin with `# scx_version=0.1-alpha` on its own line, followed by the TSV header. Earlier unversioned draft manifests must be regenerated. Matrix Market symmetry MUST be `general`. Table headers MUST be nonempty and unique, and every record MUST have the same number of fields.
+
+Writers MUST refuse existing output destinations. The reference exporter stages and validates all files before publishing a new directory. Metadata are textual and do not preserve numeric/category dtypes or the distinction between missing and empty strings. The AnnData exporter MUST warn about this conversion and omitted unsupported objects.
+
 ## Layout and axes
 
 An SCX dataset is a directory. It MUST contain `manifest.tsv`, `cells.tsv.gz`, `features.tsv.gz`, and `matrices/counts.mtx.gz`. All paths in the manifest are relative to the dataset root. The expression matrix MUST be CELL × FEATURE; the cell and feature table row orders define its axes. A cell graph is CELL × CELL, and an embedding is CELL × COMPONENT.

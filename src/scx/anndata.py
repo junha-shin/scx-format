@@ -4,6 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import warnings
+import tempfile
+import shutil
 
 from .core import REQUIRED, read_manifest, read_matrix, read_table, write_manifest, write_matrix, write_table, NAME
 from .validate import validate
@@ -18,11 +21,30 @@ def _table(frame: pd.DataFrame, key: str) -> pd.DataFrame:
 
 
 def from_anndata(adata, root: str | Path) -> None:
+    """Validate a staged dataset and publish only to a new directory."""
+    root = Path(root)
+    if root.exists():
+        raise FileExistsError(f"output already exists: {root}")
+    root.parent.mkdir(parents=True, exist_ok=True)
+    stage = Path(tempfile.mkdtemp(prefix=".scx-", dir=root.parent))
+    try:
+        _from_anndata(adata, stage)
+        stage.rename(root)
+    finally:
+        if stage.exists():
+            shutil.rmtree(stage)
+
+
+def _from_anndata(adata, root: str | Path) -> None:
     root = Path(root)
     if "counts" not in adata.layers:
         raise ValueError("AnnData layers['counts'] is required")
     if not adata.obs_names.is_unique or not adata.var_names.is_unique:
         raise ValueError("cell and feature names must be unique")
+    if len(adata.obs.columns) or len(adata.var.columns):
+        warnings.warn("SCX metadata are text: dtype, category and missing/empty distinctions are not preserved", UserWarning)
+    if set(adata.layers.keys()) - {"counts", None} or len(adata.uns) or list(adata.varm.keys()) or list(adata.varp.keys()) or adata.raw is not None:
+        warnings.warn("SCX omits extra layers, uns, varm, varp and raw", UserWarning)
     entries = [(path, role, name) for role, (path, name) in REQUIRED.items()]
     write_table(root / "cells.tsv.gz", _table(adata.obs, "cell_id"))
     write_table(root / "features.tsv.gz", _table(adata.var, "feature_id"))
@@ -32,9 +54,11 @@ def from_anndata(adata, root: str | Path) -> None:
         entries.append(("matrices/normalized.mtx.gz", "normalized", "normalized"))
     for name, values in adata.obsm.items():
         if not NAME.fullmatch(name):
+            warnings.warn(f"Skipping unsupported embedding name: {name}", UserWarning)
             continue
         array = np.asarray(values)
         if array.ndim != 2 or not np.issubdtype(array.dtype, np.number):
+            warnings.warn(f"Skipping unsupported embedding: {name}", UserWarning)
             continue
         table = pd.DataFrame(array, columns=[f"dim_{i+1}" for i in range(array.shape[1])])
         table.insert(0, "cell_id", adata.obs_names.astype(str))
@@ -43,6 +67,7 @@ def from_anndata(adata, root: str | Path) -> None:
         entries.append((path, "embedding", name))
     for name, values in adata.obsp.items():
         if not NAME.fullmatch(name):
+            warnings.warn(f"Skipping unsupported graph name: {name}", UserWarning)
             continue
         path = f"graphs/{name}.mtx.gz"
         write_matrix(root / path, values)

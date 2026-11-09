@@ -19,6 +19,8 @@ Seurat import/export is planned, not implemented. A Seurat adapter will transpos
 
 ## Development
 
+Exports refuse existing destinations and validate a temporary dataset before publishing. The manifest begins with `# scx_version=0.1-alpha`; unversioned draft datasets need regeneration. Export warnings identify metadata dtype loss and unsupported omitted objects. GitHub Actions runs the tests on Python 3.10 and 3.12.
+
 ```sh
 pip install -e '.[test]'
 pytest

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import gzip
+import csv
 from pathlib import Path, PurePosixPath
 import re
 
@@ -10,6 +11,7 @@ from scipy import sparse
 from scipy.io import mmread, mmwrite
 
 HEADER = ("path", "role", "name")
+VERSION = "0.1-alpha"
 REQUIRED = {
     "cells": ("cells.tsv.gz", "cells"),
     "features": ("features.tsv.gz", "features"),
@@ -30,7 +32,10 @@ def safe_path(root: Path, name: str) -> Path:
 
 
 def read_manifest(root: Path) -> pd.DataFrame:
-    manifest = pd.read_csv(root / "manifest.tsv", sep="\t", dtype=str, keep_default_na=False)
+    with open(root / "manifest.tsv", encoding="utf-8") as handle:
+        if handle.readline().rstrip("\n\r") != f"# scx_version={VERSION}":
+            raise ValueError("missing or unsupported SCX manifest version")
+    manifest = pd.read_csv(root / "manifest.tsv", sep="\t", dtype=str, keep_default_na=False, skiprows=1)
     if tuple(manifest.columns) != HEADER:
         raise ValueError("manifest header must be path, role, name")
     if manifest.duplicated("path").any() or manifest.duplicated(["role", "name"]).any():
@@ -50,25 +55,40 @@ def read_manifest(root: Path) -> pd.DataFrame:
 
 def write_manifest(root: Path, entries: list[tuple[str, str, str]]) -> None:
     root.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(entries, columns=HEADER).to_csv(root / "manifest.tsv", sep="\t", index=False)
+    with open(root / "manifest.tsv", "w", encoding="utf-8", newline="") as handle:
+        handle.write(f"# scx_version={VERSION}\n")
+        pd.DataFrame(entries, columns=HEADER).to_csv(handle, sep="\t", index=False)
     read_manifest(root)
 
 
 def read_table(path: Path) -> pd.DataFrame:
-    return pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    with gzip.open(path, "rt", encoding="utf-8", newline="") as handle:
+        rows = list(csv.reader(handle, delimiter="\t", strict=True))
+    if not rows or not rows[0] or any(not h for h in rows[0]) or len(set(rows[0])) != len(rows[0]):
+        raise ValueError("table headers must be nonempty and unique")
+    if any(len(row) != len(rows[0]) for row in rows) or any(any(c in value for c in "\t\r\n") for row in rows for value in row):
+        raise ValueError("invalid table width or tab/newline in value")
+    return pd.DataFrame(rows[1:], columns=rows[0])
 
 
 def write_table(path: Path, table: pd.DataFrame) -> None:
+    values = [str(c) for c in table.columns] + [str(v) for v in table.to_numpy().flat]
+    if any(any(c in value for c in "\t\r\n") for value in values):
+        raise ValueError("tabs and newlines are unsupported in tables")
     path.parent.mkdir(parents=True, exist_ok=True)
     table.to_csv(path, sep="\t", index=False, compression="gzip")
 
 
 def read_matrix(path: Path) -> sparse.csr_matrix:
     with gzip.open(path, "rb") as handle:
-        return sparse.csr_matrix(mmread(handle))
+        header = handle.readline().decode("ascii").strip().lower().split()
+        if len(header) != 5 or header[:3] != ["%%matrixmarket", "matrix", "coordinate"] or header[3] not in {"real", "integer"} or header[4] != "general":
+            raise ValueError("matrix must use Matrix Market coordinate real/integer general")
+        handle.seek(0)
+        return sparse.csr_matrix(mmread(handle, spmatrix=True))
 
 
 def write_matrix(path: Path, matrix) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with gzip.open(path, "wb") as handle:
-        mmwrite(handle, sparse.coo_matrix(matrix))
+        mmwrite(handle, sparse.coo_matrix(matrix), symmetry="general")
