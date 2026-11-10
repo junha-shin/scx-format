@@ -63,8 +63,13 @@ install_scx <- function(lib = NULL, source = FALSE,
   if (!asset %in% available) stop("This release has no matching binary. With build tools, call install_scx(source=TRUE)")
   path <- obtain(asset)
   .scx_verify_download(path, sums)
+  # R's binary installer derives the package directory from the archive name.
+  # Keep platform labels in release assets, but use the standard name locally.
+  extension <- if (endsWith(asset, ".zip")) ".zip" else if (endsWith(asset, ".tgz")) ".tgz" else ".tar.gz"
+  install_path <- file.path(temp, paste0("scxSeurat_0.1.5", extension))
+  if (!identical(path, install_path) && !file.rename(path, install_path)) stop("Cannot prepare verified package for installation")
   type <- if (source || Sys.info()[["sysname"]] == "Linux") "source" else if (.Platform$OS.type == "windows") "win.binary" else "mac.binary"
-  utils::install.packages(path, lib = lib, repos = NULL, type = type)
+  utils::install.packages(install_path, lib = lib, repos = NULL, type = type)
   description <- file.path(lib, "scxSeurat", "DESCRIPTION")
   if (!file.exists(description) || read.dcf(description)[1, "Version"] != "0.1.5") stop("scxSeurat installation did not complete")
   message("Installed scxSeurat 0.1.5. Next: library(scxSeurat)")
