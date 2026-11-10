@@ -5,10 +5,13 @@ library(Matrix)
 args <- commandArgs(trailingOnly = TRUE)
 stopifnot(length(args) == 1L, !dir.exists(args[1]))
 dir.create(args[1], recursive = TRUE)
+.run_r_only <- function() {
+original_path <- Sys.getenv("PATH")
+on.exit({Sys.setenv(PATH = original_path); untrace(base::system); untrace(base::system2)}, add = TRUE)
 trace(base::system, tracer = quote(stop("external process forbidden")), print = FALSE)
 trace(base::system2, tracer = quote(stop("external process forbidden")), print = FALSE)
 Sys.setenv(PATH = "", RETICULATE_PYTHON = "/nonexistent/python", PYTHON = "/nonexistent/python")
-stopifnot(!nzchar(Sys.which("python")), !nzchar(Sys.which("python3")))
+stopifnot(identical(Sys.getenv("PATH"), ""))
 for (assay_class in c("Assay", "Assay5")) {
   counts <- Matrix(matrix(c(1, 0, 3, 0, 2, 4), 3, 2), sparse = TRUE)
   dimnames(counts) <- list(c("g1", "g2", "g3"), c("c1", "c2"))
@@ -39,3 +42,5 @@ writeLines(jsonlite::toJSON(list(passed = TRUE, python_on_path = FALSE, external
   assays = c("Assay", "Assay5"), R = R.version.string, scxSeurat = as.character(packageVersion("scxSeurat"))),
   auto_unbox = TRUE), file.path(args[1], "report.json"))
 cat("R-only installed-package validation passed for Assay and Assay5\n")
+}
+.run_r_only()

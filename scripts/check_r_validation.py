@@ -68,6 +68,7 @@ case('nonfinite', lambda p: matrix(p, '%%MatrixMarket matrix coordinate real gen
 case('negative', lambda p: matrix(p, '%%MatrixMarket matrix coordinate real general\n2 3 1\n1 1 -1\n'))
 case('symmetry', lambda p: matrix(p, '%%MatrixMarket matrix coordinate real symmetric\n2 3 1\n1 1 1\n'))
 case('duplicate_coords', lambda p: matrix(p, '%%MatrixMarket matrix coordinate real general\n2 3 2\n1 1 1\n1 1 2\n'), True, True)
+case('integer_cancellation_R_limit', lambda p: matrix(p, '%%MatrixMarket matrix coordinate integer general\n2 3 3\n1 1 9007199254740991\n1 1 2\n1 1 -9007199254740991\n'), True, False)
 case('bool_number', lambda p: metadata(p, 'flag', '1'))
 case('integer_overflow', lambda p: metadata(p, 'number', '2147483648'))
 case('fraction_integer', lambda p: metadata(p, 'number', '1.5'))

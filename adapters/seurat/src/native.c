@@ -25,6 +25,7 @@ static wchar_t *wide_path(SEXP x) {
 #else
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #ifdef __linux__
 #include <sys/syscall.h>
 #endif
@@ -33,6 +34,32 @@ static wchar_t *wide_path(SEXP x) {
 #endif
 #endif
 
+static int is_link_path(SEXP path) {
+#ifdef _WIN32
+    DWORD attributes = GetFileAttributesW(wide_path(path));
+    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_REPARSE_POINT);
+#else
+    struct stat info;
+    return lstat(Rf_translateCharUTF8(STRING_ELT(path, 0)), &info) == 0 && S_ISLNK(info.st_mode);
+#endif
+}
+static SEXP scx_is_link(SEXP path) {
+    scalar_path(path);
+    return Rf_ScalarLogical(is_link_path(path));
+}
+static SEXP scx_unlink_link(SEXP path) {
+    scalar_path(path);
+    if (!is_link_path(path)) Rf_error("refusing to remove a non-link path");
+#ifdef _WIN32
+    wchar_t *wide = wide_path(path);
+    DWORD attributes = GetFileAttributesW(wide);
+    BOOL success = attributes & FILE_ATTRIBUTE_DIRECTORY ? RemoveDirectoryW(wide) : DeleteFileW(wide);
+    if (!success) Rf_error("could not remove link (Windows error %lu)", (unsigned long)GetLastError());
+#else
+    if (unlink(Rf_translateCharUTF8(STRING_ELT(path, 0))) != 0) Rf_error("could not remove link: %s", strerror(errno));
+#endif
+    return R_NilValue;
+}
 static SEXP scx_rename_new(SEXP source, SEXP target) {
     scalar_path(source); scalar_path(target);
 #ifdef _WIN32
@@ -108,6 +135,8 @@ static SEXP scx_check_gzip(SEXP path) {
     return R_ExecWithCleanup(gzip_body, &ctx, gzip_cleanup, &ctx);
 }
 static const R_CallMethodDef calls[] = {
+    {"scx_is_link", (DL_FUNC) &scx_is_link, 1},
+    {"scx_unlink_link", (DL_FUNC) &scx_unlink_link, 1},
     {"scx_rename_new", (DL_FUNC) &scx_rename_new, 2},
     {"scx_check_gzip", (DL_FUNC) &scx_check_gzip, 1},
     {NULL, NULL, 0}

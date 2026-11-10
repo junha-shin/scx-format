@@ -70,6 +70,9 @@ may therefore pass the general Python validator while being outside R's readable
 subset. Integer Matrix Market values outside ±(2^53−1), including duplicate sums,
 are refused rather than rounded. Sparse dimensions/entry counts must fit R/Matrix
 integer indexing. See [dtype mappings](../compatibility/README.md#dtype-support).
+Duplicate integer groups whose absolute term sum exceeds that range are also
+refused, even if cancellation would yield a small final value; intermediate
+double arithmetic could otherwise silently lose integer precision.
 
 ## Safe publication and recovery
 
@@ -80,6 +83,9 @@ existing destination, even a racing empty directory. There is no unsafe fallback
 to a replacing rename. Directory replacement retains `stage/previous` until
 publication succeeds; errors and interrupts roll back, and failed restoration
 keeps both backup and lock with recovery paths.
+Windows output reparse points, including junctions, are refused using native
+file attributes. Lock keys expand short (8.3) parent paths before hashing, so
+recovery and cross-language locking use the same canonical destination.
 
 Directory replacement still has a brief name gap. Hard process termination and
 power loss bypass normal cleanup; neither implementation promises durable

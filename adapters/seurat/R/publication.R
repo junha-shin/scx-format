@@ -7,7 +7,7 @@
 }
 
 .scx_exists <- function(path) file.exists(path) || dir.exists(path) || .scx_symlink(path)
-.scx_symlink <- function(path) { x <- Sys.readlink(path); !is.na(x) && nzchar(x) }
+.scx_symlink <- function(path) isTRUE(.scx_native("scx_is_link", path))
 .scx_rename_new <- function(source, target) .scx_native("scx_rename_new", source, target)
 
 .scx_output_path <- function(path) {
@@ -16,6 +16,7 @@
 }
 
 .scx_lock_path <- function(path) {
+  path <- file.path(normalizePath(dirname(path), winslash = "/", mustWork = TRUE), basename(path))
   # Same lock identity as Python 0.1.0a5 (including Windows case/separators).
   key <- if (.Platform$OS.type == "windows") tolower(chartr("/", "\\", path)) else path
   file.path(dirname(path), paste0(".scx-lock-", substr(digest::digest(charToRaw(enc2utf8(key)),

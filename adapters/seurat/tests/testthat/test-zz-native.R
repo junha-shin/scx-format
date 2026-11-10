@@ -24,7 +24,7 @@ for (class in c("Assay", "Assay5")) testthat::test_that(paste("native R round tr
   testthat::expect_equal(as.matrix(before[["RNA_nn"]]), as.matrix(after[["RNA_nn"]]), tolerance = 0)
 })
 
-for (damage in c("truncate", "crc", "deflate", "plain", "extra", "short", "index", "shape", "nonfinite", "header"))
+for (damage in c("truncate", "crc", "deflate", "plain", "extra", "short", "index", "shape", "nonfinite", "header", "precision"))
 testthat::test_that(paste("native validation rejects damaged MTX", damage), {
   root <- tempfile(); on.exit(unlink(root, recursive = TRUE)); native_export(root)
   path <- file.path(root, "matrices/counts.mtx.gz")
@@ -40,9 +40,10 @@ testthat::test_that(paste("native validation rejects damaged MTX", damage), {
       index = "2 3 1\n3 1 1",
       shape = "3 2 1\n1 1 1",
       nonfinite = "2 3 1\n1 1 NaN",
+      precision = "2 3 3\n1 1 9007199254740991\n1 1 2\n1 1 -9007199254740991",
       header = "2 3\n1\n")
     con <- gzfile(path, "wt")
-    writeLines(c(if (damage == "header") "%%MatrixMarket matrix array real general" else "%%MatrixMarket matrix coordinate real general", text), con)
+    writeLines(c(if (damage == "header") "%%MatrixMarket matrix array real general" else if (damage == "precision") "%%MatrixMarket matrix coordinate integer general" else "%%MatrixMarket matrix coordinate real general", text), con)
     close(con)
   }
   testthat::expect_error(validate_scx(root), "counts.mtx.gz")
@@ -166,14 +167,17 @@ testthat::test_that("invalid UTF-8 tables are rejected with file context", {
 })
 
 testthat::test_that("escaping resource and output symlinks are refused", {
-  parent <- tempfile(); dir.create(parent); on.exit(unlink(parent, recursive = TRUE))
+  parent <- tempfile(); dir.create(parent); output <- file.path(parent, "link")
+  on.exit({
+    if (.scx_symlink(output)) .scx_native("scx_unlink_link", output)
+    unlink(parent, recursive = TRUE)
+  })
   root <- file.path(parent, "out"); native_export(root)
   matrix <- file.path(root, "matrices/counts.mtx.gz")
   outside <- file.path(parent, "outside.gz"); file.copy(matrix, outside); unlink(matrix)
   linked <- suppressWarnings(file.symlink(outside, matrix))
   if (!linked) testthat::skip("account cannot create symlinks")
   testthat::expect_error(validate_scx(root), "escapes")
-  output <- file.path(parent, "link")
   if (!suppressWarnings(file.symlink(root, output))) testthat::skip("account cannot create directory symlinks")
   testthat::expect_error(suppressWarnings(write_scx_seurat(tiny_seurat(), output, overwrite = TRUE)), "symlinks are refused")
 })

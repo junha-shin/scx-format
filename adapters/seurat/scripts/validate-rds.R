@@ -4,6 +4,9 @@ library(SeuratObject)
 args <- commandArgs(TRUE)
 stopifnot(length(args) == 2L, !dir.exists(args[2]))
 before <- readRDS(args[1]); assay <- DefaultAssay(before)
+.run_rds <- function() {
+original_path <- Sys.getenv("PATH")
+on.exit({Sys.setenv(PATH = original_path); untrace(base::system); untrace(base::system2)}, add = TRUE)
 trace(base::system, tracer = quote(stop("external process forbidden")), print = FALSE)
 trace(base::system2, tracer = quote(stop("external process forbidden")), print = FALSE)
 Sys.setenv(PATH = "", PYTHON = "/nonexistent/python", RETICULATE_PYTHON = "/nonexistent/python")
@@ -28,3 +31,5 @@ report <- list(passed = TRUE, python_on_path = FALSE, external_process_calls = 0
   SeuratObject = as.character(packageVersion("SeuratObject")))
 writeLines(jsonlite::toJSON(report, auto_unbox = TRUE, pretty = TRUE), file.path(args[2], "report.json"))
 cat(jsonlite::toJSON(report, auto_unbox = TRUE), "\n")
+}
+.run_rds()

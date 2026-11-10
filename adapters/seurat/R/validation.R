@@ -87,6 +87,11 @@
   if (any(!is.finite(entries$x))) stop("matrix values must be finite")
   if (header[4] == "integer" && any(entries$x != trunc(entries$x) | abs(entries$x) > 2^53 - 1))
     stop("integer MTX value cannot be represented exactly in native R")
+  if (header[4] == "integer" && sum(abs(entries$x)) > 2^53 - 1) {
+    bounds <- Matrix::sparseMatrix(i = entries$i, j = entries$j, x = abs(entries$x), dims = as.integer(dims[1:2]))
+    if (any(.scx_values(bounds) > 2^53 - 1)) stop("integer duplicate group can lose native R precision")
+    rm(bounds)
+  }
   x <- Matrix::sparseMatrix(i = entries$i, j = entries$j, x = entries$x, dims = as.integer(dims[1:2]))
   if (any(!is.finite(.scx_values(x)))) stop("nonfinite summed matrix values")
   if (header[4] == "integer" && any(abs(.scx_values(x)) > 2^53 - 1)) stop("summed integer MTX value exceeds native R exact range")
