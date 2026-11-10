@@ -4,10 +4,21 @@ SCX v0.1-alpha is a directory format for one scRNA-seq feature space. It uses gz
 
 Required files: `manifest.tsv`, `cells.tsv.gz`, `features.tsv.gz`, `matrices/counts.mtx.gz`. Optional files include `matrices/normalized.mtx.gz`, `embeddings/*.tsv.gz`, and `graphs/*.mtx.gz`. See [the specification](specification/SCX-v0.1.md).
 
-## Install and use
+## First public alpha
+
+[v0.1.0-alpha.5](https://github.com/junha-shin/scx-format/releases/tag/v0.1.0-alpha.5)
+packages Python **0.1.0a5** and R **0.1.3**. Start with the
+[combined Python/R installation guide](docs/getting-started.md), including
+Seurat → AnnData and AnnData → Seurat examples, or the
+[external-user verification procedure](docs/release-verification.md).
+See [changes](CHANGELOG.md) and [known limits / release notes](docs/releases/v0.1.0-alpha.5.md).
+This is a GitHub prerelease; PyPI and CRAN publication are not included.
+
+## Use
+
+After installing the Python package in the guide:
 
 ```sh
-pip install -e '.[anndata]'
 scx from-h5ad input.h5ad output.scx
 scx validate output.scx
 scx to-h5ad output.scx restored.h5ad
@@ -28,6 +39,11 @@ time, peak-memory and file-size measurements at 1k, 10k and 50k cells, including
 before/after results and the gzip level 6 storage tradeoff.
 
 ## Development
+
+From a checkout, `pip install -e '.[test]'` installs the development environment.
+Published-package checks instead install the release wheel and R tarball; run
+`python examples/quickstart/verify.py --output quickstart-output-bridge` after
+following the installation guide. Add `--python-only` for a no-R check.
 
 See [PBMC3k validation](examples/pbmc3k/README.md) for a reproducible real-data
 H5AD → SCX → H5AD example, pinned source checksum and recorded results.

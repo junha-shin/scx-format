@@ -5,6 +5,11 @@ Requires R, SeuratObject >= 5, Matrix, jsonlite and Python with scx-format >=
 `LayerData` APIs and accepts a single Seurat assay (Assay5 or Assay). Source it
 from the repository root, or install the R package in this directory.
 
+For the released package and one Python/R environment, follow the
+[combined installation guide](../../docs/getting-started.md). It includes
+both conversion directions, installed-package validation and recovery links.
+The `source()` workflow below is for development checkouts.
+
 ```r
 install.packages(c("SeuratObject", "jsonlite"))
 source("adapters/seurat/R/scx.R")

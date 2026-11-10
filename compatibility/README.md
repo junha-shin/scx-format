@@ -38,7 +38,7 @@ in CI; PBMC3k reports record the separate local real-data validation. CI uploads
 JUnit and per-environment JSON artifacts. Recorded success is evidence for the
 listed runs, not a performance or general biological correctness claim.
 The Python suite includes 86 cases per AnnData environment (two symlink cases
-may skip on Windows without link-creation privileges); R tests include 45
+may skip on Windows without link-creation privileges); R tests include 47
 assertions covering both assay classes. Counts-only selection and dense/CSR/CSC
 Python input are included. Safety cases cover failed writes, interrupted processes,
 writer races, rollback and corrupt transport; see [safe I/O](../docs/safe-io.md).

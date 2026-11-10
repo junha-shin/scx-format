@@ -152,3 +152,12 @@ testthat::test_that("Python validation rejects corrupt R output before replaceme
   testthat::expect_error(suppressWarnings(write_scx_seurat(object, root, overwrite = TRUE)), "counts.mtx.gz")
   testthat::expect_identical(readBin(path, "raw", n = file.info(path)$size), before)
 })
+
+testthat::test_that("import does not add QC columns absent from source metadata", {
+  object <- tiny_seurat()
+  object@meta.data <- object[[]][, c("integer", "logical", "category", "text"), drop = FALSE]
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE))
+  testthat::expect_warning(write_scx_seurat(object, root), "SCX exports")
+  restored <- read_scx_seurat(root)
+  testthat::expect_identical(restored[[]], object[[]])
+})

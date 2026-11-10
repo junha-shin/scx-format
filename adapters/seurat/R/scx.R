@@ -208,8 +208,6 @@ read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python"), a
   assay_object <- if (assay_class == "Assay5") SeuratObject::CreateAssay5Object(counts = counts) else SeuratObject::CreateAssayObject(counts = counts)
   object <- SeuratObject::CreateSeuratObject(assay_object, assay = assay, meta.data = meta)
   if (!identical(rownames(object[[assay]]), genes)) stop("Seurat altered feature IDs; import refused")
-  # Replace Seurat's generated metadata to retain exactly the SCX columns.
-  object@meta.data <- meta
   if (ncol(feature_meta)) object[[assay]] <- SeuratObject::AddMetaData(object[[assay]], feature_meta)
   for (i in seq_len(nrow(manifest))) {
     entry <- manifest[i, ]
@@ -227,6 +225,9 @@ read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python"), a
       object[[entry$name]] <- graph
     }
   }
+  # Assay/feature-metadata setters may regenerate QC columns. Restore the
+  # validated SCX table after every setter to retain exactly the source columns.
+  object@meta.data <- meta
   object
 }
 

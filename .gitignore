@@ -24,3 +24,5 @@ examples/seurat/output*/
 benchmarks/work/
 .venv-bench/
 .stability-tests-perf/
+.venv-release*/
+quickstart-output*/
