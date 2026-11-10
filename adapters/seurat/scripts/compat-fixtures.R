@@ -1,5 +1,6 @@
 # Rscript .../compat-fixtures.R <new fixture root> [existing PBMC3k source.rds]
 source("adapters/seurat/R/scx.R")
+source("adapters/seurat/tests/testthat/helper-fixtures.R")
 source("adapters/seurat/tests/testthat/test-scx.R")
 source("examples/seurat/reference.R")
 args <- commandArgs(trailingOnly = TRUE)

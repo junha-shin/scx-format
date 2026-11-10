@@ -26,3 +26,9 @@ benchmarks/work/
 .stability-tests-perf/
 .venv-release*/
 quickstart-output*/
+.r-tools/
+adapters/seurat/src/*.o
+adapters/seurat/src/*.dll
+adapters/seurat/src/*.so
+scxSeurat_*.tar.gz
+scxSeurat_*.zip

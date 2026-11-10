@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — R adapter 0.1.4
+
+- Seurat ↔ SCX runs without Python, including the public `validate_scx()` API.
+- R-native structural, typed metadata, axis and sparse matrix validation, with
+  registered C helpers for complete gzip CRC/trailer validation and atomic
+  no-replace directory rename. Source installation needs R build tools/zlib.
+- Staging, explicit overwrite protection, rollback/backup retention and lock
+  identity compatible with Python 0.1.0a5. Legacy `python` arguments are ignored.
+- Linux/Windows R-only CI hides Python and forbids subprocess calls during the
+  installed-package round trip; corruption/fault/termination tests and separate
+  Python/R acceptance and cross-language lock checks remain in CI.
+- Wide metadata integer and numeric-category restrictions remain explicit; the
+  R validator checks R-readable data. Integer MTX values exceeding native R's
+  exact integer range are refused. The alpha.5 tag/assets are unchanged.
+
 ## v0.1.0-alpha.5 — first public alpha
 
 Python package: **0.1.0a5**. R adapter: **0.1.3**. Format: **0.1-alpha**.

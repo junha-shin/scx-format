@@ -1,5 +1,14 @@
 # Seurat → SCX → AnnData PBMC3k validation
 
+Main's R adapter 0.1.4 additionally passed a **Python-free RDS → SCX → R**
+round trip using this example's saved source object. See the
+[recorded native report](r-native-report.json): 2,700 cells × 13,714 features,
+exact metadata and zero errors for counts, normalized data, PCA/UMAP and NN/SNN
+graphs. Python was hidden and external processes were forbidden. Reproduce
+after installing 0.1.4 with `Rscript adapters/seurat/scripts/validate-rds.R
+examples/seurat/output-verified/source.rds .r-tests/native-pbmc-check`, substituting
+the location of your generated `source.rds`. See [R-only setup](../../docs/r-only.md).
+
 This example begins with the official 10x PBMC3k raw count archive, creates a
 real Seurat object, and runs Seurat analysis before exporting to SCX. Independent
 native Seurat reference files are compared against an actual restored H5AD.

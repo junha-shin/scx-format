@@ -1,5 +1,11 @@
 # Safe writes, replacement and recovery
 
+Current main's **R adapter 0.1.4** now implements validation and publication
+without Python, using compiled R helpers. See [R-only operation](r-only.md) for
+its installation, validation subset and tests. It shares Python's lock identity,
+backup layout and no-replace publication contract. The version-specific Python
+requirement below describes the original R 0.1.3 / alpha.5 release.
+
 Available in Python 0.1.0a5 and scxSeurat 0.1.3. The on-disk format and CELL ×
 FEATURE orientation are unchanged. This applies to `from_anndata`, `write_h5ad`,
 the conversion CLI and `write_scx_seurat`. Core `write_table`, `write_matrix`

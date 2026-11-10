@@ -1,3 +1,5 @@
 export(write_scx_seurat)
 export(read_scx_seurat)
-importFrom(utils,read.delim,write.table)
+export(validate_scx)
+useDynLib(scxSeurat, .registration = TRUE)
+importFrom(utils,read.delim,write.table,count.fields)

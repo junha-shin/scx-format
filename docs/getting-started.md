@@ -1,5 +1,9 @@
 # Install and convert Seurat / AnnData
 
+For **main-branch R adapter 0.1.4 without Python**, use the newer
+[R-only installation guide](r-only.md). The version-pinned instructions below
+continue to describe the original alpha.5 release and its R 0.1.3 assets.
+
 This guide targets the first public GitHub prerelease, **v0.1.0-alpha.5**:
 Python `scx-format 0.1.0a5`, R `scxSeurat 0.1.3`, SCX format `0.1-alpha` and
 metadata schema `1.0`. Earlier alpha numbers were internal development builds.

@@ -1,4 +1,13 @@
 # SCX v0.1-alpha, single-assay SeuratObject >= 5 adapter.
+# Development source() retains access to the installed package's native helpers.
+.scx_ofile <- tryCatch(sys.frame(1)$ofile, error = function(e) NULL)
+if (!isNamespace(environment()) && !is.null(.scx_ofile) && !exists(".scx_inspect", envir = environment(), inherits = FALSE)) {
+  .scx_source_dir <- dirname(.scx_ofile)
+  for (.scx_support in c("publication.R", "validation.R"))
+    sys.source(file.path(.scx_source_dir, .scx_support), envir = environment())
+  rm(.scx_source_dir, .scx_support)
+}
+rm(.scx_ofile)
 .scx_json <- function(x) as.character(jsonlite::toJSON(x, auto_unbox = TRUE, na = "null", null = "null", digits = 17))
 
 .scx_column_json <- function(values) {
@@ -27,10 +36,7 @@
 }
 
 .scx_read_tsv <- function(path) {
-  con <- gzfile(path, "rt", encoding = "UTF-8")
-  on.exit(close(con))
-  read.delim(con, check.names = FALSE, stringsAsFactors = FALSE, colClasses = "character",
-             na.strings = NULL, comment.char = "", fill = FALSE)
+  .scx_table(path)
 }
 
 .scx_mtx <- function(x, path) {
@@ -111,11 +117,11 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
                              counts_layer = "counts", normalized_layer = "data",
                              reductions = SeuratObject::Reductions(object),
                              graphs = SeuratObject::Graphs(object), overwrite = FALSE,
-                             python = Sys.which("python")) {
+                             python = NULL) {
   if (!inherits(object, "Seurat")) stop("object must be Seurat")
   if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) stop("overwrite must be TRUE or FALSE")
   if ((file.exists(path) || dir.exists(path)) && !overwrite) stop("output already exists; choose a new path or use overwrite = TRUE")
-  if (!nzchar(python)) stop("Python with scx-format installed is required for validated export")
+  # Kept for source compatibility; no Python executable is inspected or invoked.
   if (!assay %in% SeuratObject::Assays(object)) stop("unknown assay")
   layers <- SeuratObject::Layers(object[[assay]], search = NA)
   if (!counts_layer %in% layers) stop("exact counts layer required; join split layers explicitly with JoinLayers first")
@@ -128,8 +134,9 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
   rm(values)
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   path <- file.path(normalizePath(dirname(path), winslash = "/", mustWork = TRUE), basename(path))
-  stage <- tempfile(".scx-", tmpdir = dirname(path)); dir.create(stage)
-  on.exit(unlink(stage, recursive = TRUE), add = TRUE)
+  work <- tempfile(".scx-stage-", tmpdir = dirname(path)); dir.create(work)
+  stage <- file.path(work, "payload"); dir.create(stage)
+  on.exit(if (!dir.exists(file.path(work, "previous"))) unlink(work, recursive = TRUE), add = TRUE)
   entries <- data.frame(path = c("cells.tsv.gz", "features.tsv.gz", "matrices/counts.mtx.gz", "metadata.schema.json"),
                         role = c("cells", "features", "counts", "metadata_schema"),
                         name = c("cells", "features", "counts", "metadata"))
@@ -179,31 +186,19 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
   write.table(entries, con, sep = "\t", row.names = FALSE, quote = FALSE)
   close(con)
   warning("SCX exports one assay and selected layers, metadata, embeddings and graphs; identities, other layers, loadings and analysis history are not exported")
-  output <- suppressWarnings(system2(python, c("-m", "scx.publish", shQuote(stage), shQuote(path),
-                                               if (overwrite) "--overwrite"), stdout = TRUE, stderr = TRUE))
-  status <- attr(output, "status")
-  if (!is.null(status) && status != 0L) stop("SCX publication failed:\n", paste(output, collapse = "\n"))
+  .scx_publish(work, path, overwrite)
   invisible(path)
 }
 
-#' Import an SCX dataset via the Python validator and typed metadata decoder.
+#' Import an SCX dataset via the native R validator and typed metadata decoder.
 #' @export
-read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python"), assay_class = c("Assay5", "Assay")) {
+read_scx_seurat <- function(path, assay = "RNA", python = NULL, assay_class = c("Assay5", "Assay")) {
   assay_class <- match.arg(assay_class)
-  if (!nzchar(python)) stop("Python with scx-format installed is required for validated import")
-  status <- system2(python, c("-m", "scx.cli", "validate", shQuote(normalizePath(path, winslash = "/", mustWork = TRUE))))
-  if (!identical(status, 0L)) stop("SCX validation failed")
-  manifest <- read.delim(file.path(path, "manifest.tsv"), skip = 1, stringsAsFactors = FALSE, check.names = FALSE)
-  schema <- if ("metadata_schema" %in% manifest$role) jsonlite::fromJSON(file.path(path, "metadata.schema.json"), simplifyVector = FALSE) else NULL
-  cells <- .scx_read_tsv(file.path(path, "cells.tsv.gz"))
-  features <- .scx_read_tsv(file.path(path, "features.tsv.gz"))
-  ids <- cells[[1]]; genes <- features[[1]]
-  meta <- .scx_decode_frame(cells, if (is.null(schema)) NULL else schema$cells)
-  feature_meta <- .scx_decode_frame(features, if (is.null(schema)) NULL else schema$features)
-  load_matrix <- function(relative) {
-    con <- gzfile(file.path(path, relative), "rt"); on.exit(close(con))
-    methods::as(Matrix::readMM(con), "CsparseMatrix")
-  }
+  checked <- .scx_inspect(path, retain = TRUE)
+  manifest <- checked$manifest
+  ids <- checked$cells; genes <- checked$features
+  meta <- checked$meta; feature_meta <- checked$feature_meta
+  load_matrix <- function(relative) checked$matrices[[relative]]
   counts <- Matrix::t(load_matrix("matrices/counts.mtx.gz")); dimnames(counts) <- list(genes, ids)
   assay_object <- if (assay_class == "Assay5") SeuratObject::CreateAssay5Object(counts = counts) else SeuratObject::CreateAssayObject(counts = counts)
   object <- SeuratObject::CreateSeuratObject(assay_object, assay = assay, meta.data = meta)
@@ -215,8 +210,7 @@ read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python"), a
       x <- Matrix::t(load_matrix(entry$path)); dimnames(x) <- list(genes, ids)
       SeuratObject::LayerData(object, assay = assay, layer = "data") <- x
     } else if (entry$role == "embedding") {
-      table <- .scx_read_tsv(file.path(path, entry$path))
-      x <- matrix(as.numeric(as.matrix(table[-1])), nrow = length(ids)); rownames(x) <- ids
+      x <- checked$embeddings[[entry$path]]; rownames(x) <- ids
       key <- paste0("SCX", i, "_"); colnames(x) <- paste0(key, seq_len(ncol(x)))
       object[[entry$name]] <- SeuratObject::CreateDimReducObject(x, assay = assay, key = key)
     } else if (entry$role == "cell_graph") {
@@ -234,7 +228,6 @@ read_scx_seurat <- function(path, assay = "RNA", python = Sys.which("python"), a
 .scx_decode_frame <- function(table, spec) {
   frame <- data.frame(row.names = table[[1]])
   if (is.null(spec)) {
-    warning("Legacy SCX metadata have no dtype schema; loading as text")
     for (name in names(table)[-1]) frame[[name]] <- table[[name]]
     return(frame)
   }

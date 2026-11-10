@@ -1,35 +1,45 @@
 # Seurat adapter MVP
 
-Requires R, SeuratObject >= 5, Matrix, jsonlite and Python with scx-format >=
-0.1.0a5 installed (both export and import). The adapter uses public
+Version **0.1.4 on main** requires R, SeuratObject >= 5, Matrix, jsonlite and
+digest. **Seurat ↔ SCX does not require Python.** The adapter uses public
 `LayerData` APIs and accepts a single Seurat assay (Assay5 or Assay). Source it
-from the repository root, or install the R package in this directory.
+from the repository root after installing the package, or use the installed
+package directly. Small compiled R helpers provide streaming gzip integrity
+checks and atomic no-replace renames; source installation needs an R toolchain
+and zlib. See [R-only installation and validation](../../docs/r-only.md).
 
 For the released package and one Python/R environment, follow the
 [combined installation guide](../../docs/getting-started.md). It includes
 both conversion directions, installed-package validation and recovery links.
-The `source()` workflow below is for development checkouts.
+The tagged alpha.5 release contains R 0.1.3 and still requires Python. The
+`source()` workflow is for development after installing 0.1.4's native helpers.
 
 ```r
-install.packages(c("SeuratObject", "jsonlite"))
-source("adapters/seurat/R/scx.R")
+install.packages(c("SeuratObject", "jsonlite", "digest"))
+install.packages("adapters/seurat", repos = NULL, type = "source")
+library(scxSeurat)
 write_scx_seurat(pbmc, "pbmc.scx", assay = "RNA")
-# Explicit replacement, using a selected Python environment:
-write_scx_seurat(pbmc, "pbmc.scx", assay = "RNA", overwrite = TRUE,
-                 python = "/path/to/python")
-# Import also requires Python with scx-format[anndata] installed.
-restored <- read_scx_seurat("pbmc.scx", python = "/path/to/python")
+validate_scx("pbmc.scx")
+write_scx_seurat(pbmc, "pbmc.scx", assay = "RNA", overwrite = TRUE)
+restored <- read_scx_seurat("pbmc.scx")
 # Explicit legacy output; independent of Seurat.object.assay.version option.
-legacy <- read_scx_seurat("pbmc.scx", python = "/path/to/python", assay_class = "Assay")
+legacy <- read_scx_seurat("pbmc.scx", assay_class = "Assay")
 ```
 
-Exports stage all files, run the complete Python validator, and publish using
-the shared Python transaction code. Existing destinations require explicit
+Exports stage all files, run the R-native validator, and publish using
+R's transaction code and registered native helpers. Existing destinations require explicit
 `overwrite = TRUE`; failed replacement restores or retains the previous output.
 See [safe I/O and manual recovery](../../docs/safe-io.md) for filesystem limits,
-the brief directory-replacement gap and hard-interruption behavior. R import always calls
-that validator before reading paths and data. It refuses feature IDs changed by
+the brief directory-replacement gap and hard-interruption behavior. R import
+retains resources from its validation pass, avoiding unvalidated rereads.
+It refuses feature IDs changed by
 Seurat rather than silently changing their alignment.
+
+`validate_scx()` checks the R-readable subset, including native R dtype limits
+below; the Python validator additionally handles wide integer metadata and
+numeric categories that R cannot import. The optional `python` argument remains
+accepted and ignored for source compatibility. Python/AnnData are needed only
+when actually converting to or from H5AD, not for these R operations.
 
 ## Mapping
 

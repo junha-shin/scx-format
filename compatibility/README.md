@@ -1,5 +1,9 @@
 # Compatibility and support matrix
 
+Current main's R adapter 0.1.4 provides [R-only validation and safe
+publication](../docs/r-only.md), independently of Python. The alpha.5 release
+contains R 0.1.3 and retains its original requirements.
+
 This document defines the tested SCX v0.1-alpha / metadata-schema 1.0 profile.
 The Python package declares Python >= 3.10 and AnnData >= 0.11.4; that minimum
 does not imply every newer release and dependency combination has been tested.
@@ -38,8 +42,9 @@ in CI; PBMC3k reports record the separate local real-data validation. CI uploads
 JUnit and per-environment JSON artifacts. Recorded success is evidence for the
 listed runs, not a performance or general biological correctness claim.
 The Python suite includes 86 cases per AnnData environment (two symlink cases
-may skip on Windows without link-creation privileges); R tests include 47
-assertions covering both assay classes. Counts-only selection and dense/CSR/CSC
+may skip on Windows without link-creation privileges); R tests cover both assay
+classes plus native validation, corruption, rollback, races and hard interruption.
+Counts-only selection and dense/CSR/CSC
 Python input are included. Safety cases cover failed writes, interrupted processes,
 writer races, rollback and corrupt transport; see [safe I/O](../docs/safe-io.md).
 
@@ -82,7 +87,8 @@ not part of the schema.
 | Trigger | Result |
 |---|---|
 | Existing export directory or H5AD file | Refuse by default; explicit --overwrite / overwrite=True / overwrite=TRUE enables staged replacement with rollback/backup retention |
-| Seurat export without Python scx-format >=0.1.0a5 | Fail; validated export and import both require the Python package |
+| R adapter 0.1.4 without Python | Supported for Seurat ↔ SCX; native R validation/publication is always enabled |
+| R adapter 0.1.3 (alpha.5) without Python | Its original validated import/export requires Python; release assets are unchanged |
 | Output lock, output symlink, unrelated directory replacement | Refuse; inspect the named lock/recovery paths or choose a new destination |
 | Missing counts, split layers without an exact selected layer | Fail; explicitly JoinLayers/select a layer first |
 | Missing default normalized layer | R exporter warns and writes counts-only; normalized_layer=NULL selects counts-only intentionally |

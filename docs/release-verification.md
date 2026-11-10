@@ -1,5 +1,9 @@
 # Verify the alpha release
 
+The steps below are pinned to alpha.5 / R 0.1.3. Current main adds the
+[R-only 0.1.4 validation procedure](r-only.md); published alpha.5 assets are
+unchanged. Current CI also builds 0.1.4 and tests its native R-only paths.
+
 Tag **v0.1.0-alpha.5** maps to Python **0.1.0a5** and R **0.1.3**.
 Use the [unified installation guide](getting-started.md) to obtain the tagged
 checkout, install the released wheel and R source package, and select the same

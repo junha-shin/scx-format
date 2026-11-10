@@ -14,6 +14,11 @@ Seurat → AnnData and AnnData → Seurat examples, or the
 See [changes](CHANGELOG.md) and [known limits / release notes](docs/releases/v0.1.0-alpha.5.md).
 This is a GitHub prerelease; PyPI and CRAN publication are not included.
 
+**Current main:** R adapter **0.1.4** supports Seurat ↔ SCX entirely in R,
+including validation and safe output publication. See [R-only installation and
+validation](docs/r-only.md). The existing alpha.5 release contains R 0.1.3 and
+keeps its original Python requirement; its published assets are unchanged.
+
 ## Use
 
 After installing the Python package in the guide:

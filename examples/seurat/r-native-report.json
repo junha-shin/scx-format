@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "python_on_path": false,
+  "external_process_calls": 0,
+  "source_sha256": "69d1d7b8218e682247fa7085f5d907b48cb8b5833275c69c0fc0ef4653e505ae",
+  "cells": 2700,
+  "features": 13714,
+  "errors": {
+    "counts": 0,
+    "data": 0,
+    "pca": 0,
+    "umap": 0,
+    "RNA_nn": 0,
+    "RNA_snn": 0
+  },
+  "metadata": "exact",
+  "R": "R version 4.5.2 (2025-10-31 ucrt)",
+  "scxSeurat": "0.1.4",
+  "SeuratObject": "5.4.0"
+}

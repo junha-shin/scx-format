@@ -1,10 +1,12 @@
 Package: scxSeurat
 Title: Seurat Adapter for SCX Single Cell Exchange
-Version: 0.1.3
+Version: 0.1.4
 Authors@R: person("Junha", "Shin", role = c("aut", "cre"), email = "junha.shin@wisc.edu")
 Description: Explicit single-assay Seurat import and export for SCX with typed metadata.
 License: MIT + file LICENSE
 Encoding: UTF-8
-Imports: SeuratObject (>= 5.0.0), Matrix, jsonlite, methods, utils
+Imports: SeuratObject (>= 5.0.0), Matrix, jsonlite, digest, methods, utils
+SystemRequirements: zlib
+NeedsCompilation: yes
 Suggests: testthat (>= 3.0.0)
 Config/testthat/edition: 3

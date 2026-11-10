@@ -50,9 +50,11 @@ jobs:
         with:
           working-directory: adapters/seurat
           extra-packages: any::testthat
+      - run: R CMD INSTALL adapters/seurat
       - run: Rscript adapters/seurat/scripts/run-tests.R
       - run: Rscript adapters/seurat/scripts/compat-fixtures.R .r-tests/fixtures
       - run: python scripts/check_compatibility.py --fixtures .r-tests/fixtures --output .compat-results/bridge
+      - run: python scripts/check_r_validation.py --output .compat-results/native-validation
       - name: Build and install release packages; run the external-user quickstart
         if: matrix.anndata == '0.13.4'
         run: |
@@ -60,8 +62,8 @@ jobs:
           python -m build
           python -m pip install --force-reinstall --no-deps dist/*.whl
           R CMD build adapters/seurat
-          R CMD INSTALL scxSeurat_0.1.3.tar.gz
-          mv scxSeurat_0.1.3.tar.gz dist/
+          R CMD INSTALL scxSeurat_0.1.4.tar.gz
+          mv scxSeurat_0.1.4.tar.gz dist/
           python examples/quickstart/verify.py --output .compat-results/release-smoke
       - uses: actions/upload-artifact@v4
         if: matrix.anndata == '0.13.4'
@@ -79,7 +81,48 @@ jobs:
         if: always()
         with:
           name: seurat-anndata-${{ matrix.anndata }}
-          path: .compat-results/bridge/report.json
+          path: |
+            .compat-results/bridge/report.json
+            .compat-results/native-validation/report.json
+            .compat-results/native-validation/R-results.json
+  r-only:
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: runner.os == 'Linux'
+        name: Use Ubuntu HTTPS archive
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          fi
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5.2'
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: adapters/seurat
+          extra-packages: any::testthat
+      - if: runner.os != 'Windows'
+        run: R CMD INSTALL adapters/seurat
+      - if: runner.os == 'Windows'
+        run: R CMD INSTALL --build adapters/seurat
+      - run: Rscript adapters/seurat/scripts/run-tests.R
+      - name: Hide Python and forbid subprocess calls during installed-package round trip
+        run: Rscript adapters/seurat/scripts/r-only.R .r-tests/r-only
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r-only-${{ matrix.os }}
+          path: |
+            .r-tests/r-only/report.json
+            scxSeurat_*.zip
   windows-safety:
     runs-on: windows-latest
     steps:
