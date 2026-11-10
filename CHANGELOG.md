@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — no-install scripts
+
+- Self-contained `standalone/scx.py` and `standalone/scx.R`, generated from the
+  reference adapters. Reuse existing Scanpy/Seurat dependencies; no SCX package
+  installation, SCX compiler, Python-from-R bridge or automatic dependency installs.
+- Same read/write API and basic/analysis profiles. Typed metadata and canonical
+  CELL × FEATURE axes remain validated. Python retains reference safe publication.
+- Pure R single-member gzip CRC/length checks using scratch disk, exclusive shared
+  locks, new-directory reservation, SHA-256 copy verification and manifest-last
+  publication. Existing outputs and overwrite=TRUE are refused in standalone R.
+- Installation-free usage is the documentation default. Alpha.6 installed packages
+  remain optional and unchanged, including native R replacement/rollback.
+- Three-platform no-SCX CI verifies Assay/Assay5, types, optional analysis, both
+  conversion directions, corrupt gzip and interrupted-copy rejection.
+
+
 ## v0.1.0-alpha.6 — simpler installation and object I/O
 
 Python **0.1.0a6**, R **0.1.5**. Format **0.1-alpha** and schema **1.0** unchanged.

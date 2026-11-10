@@ -1,11 +1,13 @@
 # Read, write and convert
 
-Start with [installation](install.md) in your existing environment.
+Start with the [no-install files](install.md) in your existing environment.
+The Python examples assume the saved `scx.py` beside your notebook; R uses
+`source("scx.R")` on the saved R file.
 
 ## Seurat → SCX → AnnData
 
 ```r
-library(scxSeurat)
+source("scx.R")
 write_scx(seurat_object, "sample.scx")
 ```
 
@@ -15,7 +17,7 @@ adata = scx.read_scx("sample.scx")
 ```
 
 To save H5AD with SCX's protected publication, use
-`scx to-h5ad sample.scx sample.h5ad`.
+`python scx.py to-h5ad sample.scx sample.h5ad`.
 
 ## AnnData → SCX → Seurat
 
@@ -25,12 +27,12 @@ scx.write_scx(adata, "sample.scx")
 ```
 
 ```r
-library(scxSeurat)
+source("scx.R")
 seurat_object <- read_scx("sample.scx")
 ```
 
 Both languages use `write_scx(object, path)` and `read_scx(path)`.
-`validate_scx(path)` is optional diagnosis; read/write already validate.
+`validate_scx(path)` is optional diagnosis; read/write already validate. No separate SCX installation is required.
 
 ## Default scope
 
@@ -63,21 +65,23 @@ Reads restore supported embeddings/graphs present in existing datasets.
 
 ## Safety, errors and migration
 
-Existing outputs require `overwrite=True` (R: `overwrite=TRUE`; CLI:
-`--overwrite`). A failed write preserves the previous dataset or retains a
-recoverable backup and lock. Only recover a lock after the writer stops.
+Standalone R refuses every existing output and `overwrite=TRUE`: choose a
+new directory. Python supports deliberate `overwrite=True` (CLI `--overwrite`).
+The optional installed R package also supports explicit replacement with rollback.
+A failed standalone R publication retains an unreadable partial folder and lock;
+existing data are untouched. Only recover a lock after the writer stops.
 See [recovery](safe-io.md).
 
-For “already exists”, choose a new output or deliberate overwrite. For missing
+For “already exists”, choose a new output (or deliberate overwrite where supported). For missing
 counts, supply actual raw counts. For dtype errors, choose supported scalar
 metadata types. For corruption/axis mismatch, re-export from the original
 object. SCX never guesses counts or silently coerces unsupported metadata.
 
 ```sh
-scx from-h5ad input.h5ad sample.scx
-scx from-h5ad input.h5ad analysis.scx --analysis
-scx validate sample.scx
-scx to-h5ad sample.scx restored.h5ad
+python scx.py from-h5ad input.h5ad sample.scx
+python scx.py from-h5ad input.h5ad analysis.scx --analysis
+python scx.py validate sample.scx
+python scx.py to-h5ad sample.scx restored.h5ad
 ```
 
 **New API and CLI exports use the basic profile by default.** Add `--analysis`

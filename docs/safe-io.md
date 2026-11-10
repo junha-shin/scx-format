@@ -1,5 +1,19 @@
 # Safe writes, replacement and recovery
 
+## Standalone scripts
+
+The no-install Python script uses the reference Python safety implementation.
+The R source file supports **new outputs only**, not replacement/rollback.
+It reserves a new directory with `dir.create`, verifies each copied staged file
+with SHA-256, and publishes `manifest.tsv` last. Before that point readers reject
+the incomplete directory. Copy failure/interruption retains the incomplete
+folder and shared lock; inspect after the writer stops and use a fresh path.
+R checks single-member gzip CRC and length using scratch disk. These are basic
+safety guarantees, not the native package's no-replace directory rename or its
+full gzip profile. See [the standalone safety table](install.md#shared-default-and-safety).
+The replacement/native-helper details below describe the installed packages.
+
+
 Current main's **R adapter 0.1.4** now implements validation and publication
 without Python, using compiled R helpers. See [R-only operation](r-only.md) for
 its installation, validation subset and tests. It shares Python's lock identity,

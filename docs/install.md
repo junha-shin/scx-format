@@ -1,65 +1,91 @@
-# Installation
+# Use SCX without installation
 
-Install SCX in the R or Python environment you already use. A checkout, new
-environment and development tools are unnecessary for supported binary packages.
-Existing compatible dependencies are reused.
+Use the Scanpy or Seurat environment you already have. No SCX package, compiler,
+Python-from-R bridge or dependency installer is used. Downloaded scripts are
+SCX code, but they are ordinary files rather than installed packages.
 
-## Python / scverse
+## Python / Scanpy
 
-```sh
-pip install "https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.6/scx_format-0.1.0a6-py3-none-any.whl"
+Save [scx.py](https://raw.githubusercontent.com/junha-shin/scx-format/main/standalone/scx.py)
+next to your script or notebook. In that same environment:
+
+```python
+import scx
+scx.write_scx(adata, "sample.scx")
+restored = scx.read_scx("sample.scx")
 ```
 
-Run this in your AnnData environment; notebooks can use `%pip install`.
-Requirements: Python >=3.10, NumPy >=1.24, pandas >=2, SciPy >=1.11.4.
-Object/H5AD conversion needs AnnData >=0.11.4. If absent, install it with
-`pip install "anndata>=0.11.4"`. Do not bypass dependencies with `--no-deps`.
+Or run the file directly:
+
+```sh
+python scx.py from-h5ad input.h5ad sample.scx
+python scx.py validate sample.scx
+python scx.py to-h5ad sample.scx restored.h5ad
+```
+
+Only this one file is needed; the repository and an installed `scx-format` are
+unnecessary. It bundles the reference Python code and imports NumPy, pandas,
+SciPy and AnnData already present in your analysis environment. Tested dependency
+profiles are in [compatibility](../compatibility/README.md): Python >=3.10,
+pandas >=2, SciPy >=1.11.4, NumPy >=1.24 and AnnData >=0.11.4. Older environments
+are not promised to work. Missing dependencies fail; nothing installs itself.
+If another `scx` module is already imported, restart the kernel and put the
+saved file in the notebook directory before importing it.
 
 ## R / Seurat
 
 ```r
-source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.6/install.R")
-library(scxSeurat)
+source("https://raw.githubusercontent.com/junha-shin/scx-format/main/standalone/scx.R")
+write_scx(seurat_object, "sample.scx")
+restored <- read_scx("sample.scx")
 ```
 
-The installer selects a binary, verifies SHA-256 and installs into your user
-library. Only missing dependencies are installed: SeuratObject >=5, Matrix,
-jsonlite and digest. Existing SeuratObject <5 is refused rather than upgraded.
-Restart R before updating a loaded scxSeurat.
+For offline/repeated use, save [scx.R](https://raw.githubusercontent.com/junha-shin/scx-format/main/standalone/scx.R)
+once and use `source("scx.R")`. No other repository files are needed. This uses
+SeuratObject >=5, Matrix, jsonlite and digest from the existing Seurat environment.
+If any are absent the script names them and stops; it never installs or upgrades
+packages. `scxSeurat`, Python, reticulate and compiled SCX helpers are unnecessary.
+The same Assay and Assay5 forms and native R metadata limits apply.
 
-| Environment | Prebuilt coverage |
-|---|---|
-| R 4.5.x, Windows x86_64 | Binary ZIP |
-| R 4.5.x, macOS arm64 | Binary TGZ; compatible macOS runtime required |
-| R 4.5.x, Ubuntu >=22.04 x86_64 | Binary tarball built on Ubuntu 22.04 |
-| Other R / OS / architecture | Source build below |
+## Shared default and safety
 
-The macOS binary requires the build runner's macOS version or newer; consult
-the release verification record. Other Linux distributions and older macOS
-versions are not covered by the binary promise. Missing CRAN dependencies may
-need build tools when your mirror has no suitable binary.
+`write_scx(object, path)` writes counts, optional normalized expression and typed
+cell/feature metadata. `analysis=True` (R: `analysis=TRUE`; CLI: `--analysis`)
+adds embeddings/cell graphs. Counts are required; CELL × FEATURE orientation,
+canonical axis order and supported metadata types are validated on read/write.
+See [usage examples](getting-started.md).
 
-For an explicit source build:
+| Guarantee / behavior | Python file | R source file |
+|---|---|---|
+| Schema, axes, shape, finite/count values, typed metadata validation | Yes | Yes, within native R dtype limits |
+| Gzip integrity | Python reference checks | CRC + decompressed length; single-member gzip profile |
+| Existing output protection | Yes | Yes; `overwrite=TRUE` always refused |
+| New output publication | Staged directory rename | Atomic directory reservation; verified copies; manifest published last |
+| Explicit replacement with rollback | `overwrite=True` | Optional installed package only |
+| Concurrent cooperating writers | Shared exclusive lock | Same lock identity as Python/package |
 
-```r
-Sys.setenv(SCX_INSTALL_DEFINE_ONLY = "1")
-source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.6/install.R")
-Sys.unsetenv("SCX_INSTALL_DEFINE_ONLY")
-install_scx(source = TRUE)
-```
+R streams each gzip member to temporary scratch disk to verify CRC without a
+compiler. Budget space for the staged dataset, its copy and the largest
+uncompressed gzip resource. It rejects ordinary concatenated gzip files; use
+single-member files written by SCX. Native package validation remains faster and
+supports the wider gzip profile. Scripts target ordinary local filesystems;
+network/cloud-sync filesystems and hostile concurrent filesystem modification
+are not certified.
 
-Source builds need matching Rtools on Windows, compiler/zlib headers on Linux,
-or command-line developer tools on macOS. Python is unnecessary.
+If R stops during publication, its incomplete folder has no `manifest.tsv` and
+cannot be imported. Its lock is retained. After confirming the writer stopped,
+inspect/rename the partial folder and remove only the identified lock, then write
+to a fresh destination. A stop just after manifest publication can leave a valid
+folder plus a lock: validate before recovery. No existing dataset is moved or
+deleted. See also [safe I/O](safe-io.md).
 
-## Offline and verification
+## Reproducibility and optional packages
 
-Download the wheel or matching R archive and `SHA256SUMS` from the
-[release](https://github.com/junha-shin/scx-format/releases/tag/v0.1.0-alpha.6).
-Verify Python's checksum before installing the local wheel. For R, save
-`install.R` from the tag, define it as above, then call
-`install_scx(assets_dir="downloaded-assets", lib="your-library")`.
-Dependencies must already be available offline.
+The links above follow main. Save the file with your workflow; for an immutable
+copy, replace `main` in the URL with the full Git commit SHA you verified. Never
+silently refresh a script in a reproducible analysis. The two bundled scripts
+are generated from checked-in sources and CI rejects stale generated files.
 
-Check `scx.__version__` or `packageVersion("scxSeurat")`. See the
-[verification guide](release-verification.md) for an installed-package round trip.
-Every dataset read/write still performs full validation.
+Package installation is [optional](package-install.md): useful for an installed
+CLI, reusable imports, or R's faster native validator and staged replacement.
+The alpha.6 packages are unchanged and do not contain the standalone files.

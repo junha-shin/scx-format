@@ -1,16 +1,20 @@
 # Seurat ↔ SCX
 
-Version **0.1.5** supports SeuratObject >=5, legacy Assay and Assay5.
-Python is unnecessary. Install once in your existing Seurat environment:
+Use one R file in your existing SeuratObject >=5 environment; no SCX package,
+compiler or Python is required:
 
 ```r
-source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.6/install.R")
-library(scxSeurat)
+source("https://raw.githubusercontent.com/junha-shin/scx-format/main/standalone/scx.R")
 write_scx(pbmc, "pbmc.scx")
 restored <- read_scx("pbmc.scx")
-# Embeddings and cell graphs are an explicit option:
 write_scx(pbmc, "analysis.scx", analysis = TRUE)
 ```
+
+Save the file and `source("scx.R")` for offline use. Existing Matrix, jsonlite and
+digest are reused; missing dependencies cause an error, never an installation.
+Standalone R refuses replacement and supports single-member gzip. See
+[no-install setup and safety](../../docs/install.md). The rest of this document
+also describes optional installed-package features, which remain unchanged.
 
 The basic profile preserves counts, optional normalized expression and typed
 cell/feature metadata. Both languages use the same `read_scx` / `write_scx`
@@ -20,7 +24,7 @@ and [cross-language examples](../../docs/getting-started.md). Legacy
 selective `reductions` / `graphs` controls. Development `source()` still needs
 installed native helpers; see [R-only details](../../docs/r-only.md).
 
-Exports stage all files, run the R-native validator, and publish using
+Installed-package exports stage all files, run the R-native validator, and publish using
 R's transaction code and registered native helpers. Existing destinations require explicit
 `overwrite = TRUE`; failed replacement restores or retains the previous output.
 See [safe I/O and manual recovery](../../docs/safe-io.md) for filesystem limits,
