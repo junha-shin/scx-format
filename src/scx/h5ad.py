@@ -4,9 +4,25 @@ import warnings
 
 import anndata as ad
 import pandas as pd
+from .publish import staged_output
 
 
-def write_h5ad(adata, path):
+def write_h5ad(adata, path, *, overwrite=False):
+    """Write and check an H5AD in staging before publishing it safely."""
+    with staged_output(path, overwrite=overwrite) as temporary:
+        _write_h5ad(adata, temporary)
+        # Reopen with AnnData's own reader. Backed mode avoids loading X again;
+        # other supported resources may still be read by AnnData.
+        restored = ad.read_h5ad(temporary, backed='r')
+        try:
+            if (restored.shape != adata.shape or not restored.obs_names.equals(adata.obs_names)
+                    or not restored.var_names.equals(adata.var_names)):
+                raise ValueError(f"staged H5AD axis verification failed: {path}")
+        finally:
+            restored.file.close()
+
+
+def _write_h5ad(adata, path):
     """Retain missing text with an explicit H5AD nullable-string mask."""
     changed = []
     for axis in ('obs', 'var'):

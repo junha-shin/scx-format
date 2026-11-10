@@ -33,7 +33,12 @@ if (args[1] == "generate") {
 } else {
   source(args[2])
   if (args[1] == "export") {
-    write_scx_seurat(readRDS(args[3]), args[4])
+    if ("python" %in% names(formals(write_scx_seurat))) {
+      write_scx_seurat(readRDS(args[3]), args[4], python = args[5])
+    } else {
+      # Keep historical adapters usable for before/after benchmark reproduction.
+      write_scx_seurat(readRDS(args[3]), args[4])
+    }
   } else if (args[1] == "import") {
     saveRDS(read_scx_seurat(args[3], python = args[5]), args[4], compress = FALSE)
   } else stop("unknown benchmark operation")

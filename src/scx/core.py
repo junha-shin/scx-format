@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from scipy import sparse
 from scipy.io import mmread, mmwrite
+from .errors import resource
 
 HEADER = ("path", "role", "name")
 VERSION = "0.1-alpha"
@@ -24,7 +25,8 @@ NAME = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 def safe_path(root: Path, name: str) -> Path:
     path = PurePosixPath(name)
-    if not name or path.is_absolute() or "\\" in name or any(p in ("", ".", "..") for p in path.parts) or ":" in name:
+    if (not name or path.is_absolute() or "\\" in name or any(c in name for c in '\t\r\n\x00')
+            or any(p in ("", ".", "..") for p in name.split('/')) or ":" in name):
         raise ValueError(f"unsafe manifest path: {name}")
     target = root.joinpath(*path.parts)
     if not target.resolve().is_relative_to(root.resolve()):
@@ -33,12 +35,21 @@ def safe_path(root: Path, name: str) -> Path:
 
 
 def read_manifest(root: Path) -> pd.DataFrame:
-    with open(root / "manifest.tsv", encoding="utf-8") as handle:
+    root = Path(root)
+    with resource(root / 'manifest.tsv'):
+        return _read_manifest(root)
+
+
+def _read_manifest(root):
+    with open(safe_path(root, 'manifest.tsv'), encoding="utf-8", newline='') as handle:
         if handle.readline().rstrip("\n\r") != f"# scx_version={VERSION}":
             raise ValueError("missing or unsupported SCX manifest version")
-    manifest = pd.read_csv(root / "manifest.tsv", sep="\t", dtype=str, keep_default_na=False, skiprows=1)
-    if tuple(manifest.columns) != HEADER:
+        rows = list(csv.reader(handle, delimiter='\t', strict=True))
+    if not rows or tuple(rows[0]) != HEADER:
         raise ValueError("manifest header must be path, role, name")
+    if any(len(row) != len(HEADER) for row in rows[1:]):
+        raise ValueError('manifest rows must contain exactly path, role, name')
+    manifest = pd.DataFrame(rows[1:], columns=HEADER)
     if manifest.duplicated("path").any() or manifest.duplicated(["role", "name"]).any():
         raise ValueError("duplicate manifest path or role/name")
     for row in manifest.itertuples(index=False):
@@ -66,6 +77,11 @@ def write_manifest(root: Path, entries: list[tuple[str, str, str]]) -> None:
 
 
 def read_table(path: Path) -> pd.DataFrame:
+    with resource(path):
+        return _read_table(path)
+
+
+def _read_table(path):
     with gzip.open(path, "rt", encoding="utf-8", newline="") as handle:
         rows = list(csv.reader(handle, delimiter="\t", strict=True))
     if not rows or not rows[0] or any(not h for h in rows[0]) or len(set(rows[0])) != len(rows[0]):
@@ -86,12 +102,22 @@ def write_table(path: Path, table: pd.DataFrame) -> None:
 
 
 def read_matrix(path: Path) -> sparse.csr_matrix:
+    with resource(path):
+        return _read_matrix(path)
+
+
+def _read_matrix(path):
     with gzip.open(path, "rb") as handle:
         header = handle.readline().decode("ascii").strip().lower().split()
         if len(header) != 5 or header[:3] != ["%%matrixmarket", "matrix", "coordinate"] or header[3] not in {"real", "integer"} or header[4] != "general":
             raise ValueError("matrix must use Matrix Market coordinate real/integer general")
         handle.seek(0)
-        return sparse.csr_matrix(mmread(handle, spmatrix=True))
+        matrix = sparse.csr_matrix(mmread(handle, spmatrix=True))
+        # Readers can stop after declared entries. Consume the gzip trailer too
+        # so truncated streams and CRC failures cannot validate successfully.
+        while handle.read(1024 * 1024):
+            pass
+        return matrix
 
 
 def write_matrix(path: Path, matrix) -> None:

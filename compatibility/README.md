@@ -29,16 +29,19 @@ from the same genuine PBMC3k Seurat analysis; conversion to legacy Assay first
 asserts that counts, normalized values and feature metadata have not changed.
 The original 10x archive provenance is in [the real-data example](../examples/seurat/README.md).
 
-CI has three Python environment jobs and three bridge jobs. Every bridge job
+CI has three Python environment jobs, three bridge jobs, a Windows safety job
+and a benchmark smoke job. Every bridge job
 tests both assay classes, H5AD serialization, CELL × FEATURE orientation on a
 nonsquare matrix, an asymmetric graph, dtype/missing/category preservation and
 AnnData → SCX → Seurat import into the requested assay class. Small fixtures run
 in CI; PBMC3k reports record the separate local real-data validation. CI uploads
 JUnit and per-environment JSON artifacts. Recorded success is evidence for the
 listed runs, not a performance or general biological correctness claim.
-The Python suite includes 50 tests per AnnData environment; R tests include 35
+The Python suite includes 86 cases per AnnData environment (two symlink cases
+may skip on Windows without link-creation privileges); R tests include 45
 assertions covering both assay classes. Counts-only selection and dense/CSR/CSC
-Python input are included. CI repeats those checks on Ubuntu.
+Python input are included. Safety cases cover failed writes, interrupted processes,
+writer races, rollback and corrupt transport; see [safe I/O](../docs/safe-io.md).
 
 ## Dtype support
 
@@ -78,7 +81,9 @@ not part of the schema.
 
 | Trigger | Result |
 |---|---|
-| Existing export directory or H5AD file | Refuse overwrite; failed staged export does not publish a partial result |
+| Existing export directory or H5AD file | Refuse by default; explicit --overwrite / overwrite=True / overwrite=TRUE enables staged replacement with rollback/backup retention |
+| Seurat export without Python scx-format >=0.1.0a5 | Fail; validated export and import both require the Python package |
+| Output lock, output symlink, unrelated directory replacement | Refuse; inspect the named lock/recovery paths or choose a new destination |
 | Missing counts, split layers without an exact selected layer | Fail; explicitly JoinLayers/select a layer first |
 | Missing default normalized layer | R exporter warns and writes counts-only; normalized_layer=NULL selects counts-only intentionally |
 | Duplicate/empty IDs, metadata headers, reserved ID column | Fail |

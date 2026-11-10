@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from .core import read_table, write_table
+from .errors import resource
 
 NUMERIC = re.compile(r'^(?:u?int(?:8|16|32|64)|float(?:32|64)|U?Int(?:8|16|32|64)|Float(?:32|64))$')
 
@@ -79,6 +80,11 @@ def decode(values, dtype):
 
 
 def read_metadata(path, spec, id_column, *, table=None):
+    with resource(path):
+        return _read_metadata(path, spec, id_column, table=table)
+
+
+def _read_metadata(path, spec, id_column, *, table=None):
     if table is None:
         table = read_table(path)
     if not isinstance(spec, dict) or set(spec) != {'index_name', 'columns'}:
@@ -117,6 +123,11 @@ def read_metadata(path, spec, id_column, *, table=None):
 
 
 def read_schema(path):
+    with resource(path):
+        return _read_schema(path)
+
+
+def _read_schema(path):
     try:
         schema = json.loads(path.read_text(encoding='utf-8'))
         if set(schema) != {'schema_version', 'cells', 'features'} or schema['schema_version'] != '1.0':

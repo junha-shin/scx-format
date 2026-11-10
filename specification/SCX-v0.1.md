@@ -4,7 +4,14 @@ Status: draft. Scope: one scRNA-seq feature space.
 
 The manifest MUST begin with `# scx_version=0.1-alpha` on its own line, followed by the TSV header. Earlier unversioned draft manifests must be regenerated. Matrix Market symmetry MUST be `general`. Table headers MUST be nonempty and unique, and every record MUST have the same number of fields.
 
-Writers MUST refuse existing output destinations. The reference exporter stages and validates all files before publishing a new directory. New writers MUST emit the [metadata schema 1.0 extension](metadata-schema-v1.md), preserving numeric/boolean/categorical types and missing values. Legacy datasets without this extension load as text with a warning. Unsupported analysis objects omitted by an adapter MUST produce a warning.
+Writers MUST refuse existing output destinations by default. Replacement MUST
+require explicit opt-in, stage and validate the new dataset before modifying the
+old one, and retain the previous dataset until publication succeeds. Failed
+replacement MUST restore the old dataset or retain a recoverable backup and
+report its path. Implementations MUST document interruption and concurrent-reader
+limits; directory replacement need not be an atomic reader snapshot. See the
+reference implementation's [safe I/O contract](../docs/safe-io.md).
+New writers MUST emit the [metadata schema 1.0 extension](metadata-schema-v1.md), preserving numeric/boolean/categorical types and missing values. Legacy datasets without this extension load as text with a warning. Unsupported analysis objects omitted by an adapter MUST produce a warning.
 
 ## Layout and axes
 

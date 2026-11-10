@@ -112,3 +112,43 @@ testthat::test_that("sparse finite checks inspect only stored values", {
   x@x[1] <- NaN
   testthat::expect_true(any(!is.finite(.scx_values(x))))
 })
+
+testthat::test_that("validated replacement and failed writes preserve existing data", {
+  object <- tiny_seurat()
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE))
+  testthat::expect_warning(write_scx_seurat(object, root), "SCX exports")
+  snapshot <- function() {
+    files <- list.files(root, recursive = TRUE, full.names = TRUE)
+    lapply(files, function(path) readBin(path, "raw", n = file.info(path)$size))
+  }
+  before <- snapshot()
+  testthat::expect_error(write_scx_seurat(object, root), "already exists")
+  testthat::expect_identical(snapshot(), before)
+  original <- .scx_mtx
+  assign(".scx_mtx", function(x, path) stop("simulated disk full"), envir = environment(write_scx_seurat))
+  on.exit(assign(".scx_mtx", original, envir = environment(write_scx_seurat)), add = TRUE)
+  testthat::expect_error(write_scx_seurat(object, root, overwrite = TRUE), "simulated disk full")
+  testthat::expect_identical(snapshot(), before)
+  assign(".scx_mtx", original, envir = environment(write_scx_seurat))
+  object$integer <- c(9L, NA_integer_)
+  testthat::expect_warning(write_scx_seurat(object, root, overwrite = TRUE), "SCX exports")
+  schema <- jsonlite::fromJSON(file.path(root, "metadata.schema.json"), simplifyVector = FALSE)
+  decoded <- .scx_decode_frame(.scx_read_tsv(file.path(root, "cells.tsv.gz")), schema$cells)
+  testthat::expect_identical(decoded$integer, c(9L, NA_integer_))
+})
+
+testthat::test_that("Python validation rejects corrupt R output before replacement", {
+  object <- tiny_seurat()
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE))
+  testthat::expect_warning(write_scx_seurat(object, root), "SCX exports")
+  path <- file.path(root, "matrices/counts.mtx.gz")
+  before <- readBin(path, "raw", n = file.info(path)$size)
+  original <- .scx_mtx
+  assign(".scx_mtx", function(x, path) {
+    dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+    writeLines("broken gzip", path)
+  }, envir = environment(write_scx_seurat))
+  on.exit(assign(".scx_mtx", original, envir = environment(write_scx_seurat)), add = TRUE)
+  testthat::expect_error(suppressWarnings(write_scx_seurat(object, root, overwrite = TRUE)), "counts.mtx.gz")
+  testthat::expect_identical(readBin(path, "raw", n = file.info(path)$size), before)
+})

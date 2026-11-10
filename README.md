@@ -11,6 +11,9 @@ pip install -e '.[anndata]'
 scx from-h5ad input.h5ad output.scx
 scx validate output.scx
 scx to-h5ad output.scx restored.h5ad
+# Explicit replacement after a successful staged write:
+scx from-h5ad input.h5ad output.scx --overwrite
+scx to-h5ad output.scx restored.h5ad --overwrite
 ```
 
 `from-h5ad` requires `adata.layers['counts']`; it stores `adata.X` as `normalized` by default. `to-h5ad` restores counts to `layers['counts']`, and sets `X` to normalized when present, otherwise counts. Supported embeddings and cell graphs map to `obsm` and `obsp`. New exports include `metadata.schema.json` to preserve numeric widths, boolean, nullable values, strings and categorical order/unused levels in `obs`/`var`. See [metadata schema 1.0](specification/metadata-schema-v1.md). Arbitrary `uns` values remain outside this alpha round trip.
@@ -29,7 +32,15 @@ before/after results and the gzip level 6 storage tradeoff.
 See [PBMC3k validation](examples/pbmc3k/README.md) for a reproducible real-data
 H5AD → SCX → H5AD example, pinned source checksum and recorded results.
 
-Exports refuse existing destinations and validate a temporary dataset before publishing. The manifest begins with `# scx_version=0.1-alpha`; unversioned draft datasets need regeneration. Versioned legacy datasets without a metadata schema load as text with a warning. Unsupported mixed objects/dtypes fail explicitly; omitted analysis objects produce a warning. GitHub Actions runs the tests on Python 3.10 and 3.12.
+Exports refuse existing destinations by default. `--overwrite` (Python APIs:
+`overwrite=True`; R: `overwrite = TRUE`) enables staged replacement. SCX is
+validated before publication; H5AD is reopened with AnnData and its axes checked.
+Failed directory replacements restore the previous dataset, or retain its backup
+and lock with recovery paths if restoration fails. Replacing an SCX directory
+briefly makes its name unavailable to readers. See [safe I/O and recovery](docs/safe-io.md)
+for interruption behavior, disk-space needs, errors and filesystem limits.
+
+The manifest begins with `# scx_version=0.1-alpha`; unversioned draft datasets need regeneration. Versioned legacy datasets without a metadata schema load as text with a warning. Unsupported mixed objects/dtypes fail explicitly; omitted analysis objects produce a warning. GitHub Actions runs Python 3.10/3.12 compatibility tests, Seurat bridge tests, benchmarks and Windows safety tests.
 
 ```sh
 pip install -e '.[test]'

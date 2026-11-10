@@ -5,28 +5,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import warnings
-import tempfile
-import shutil
 import json
 from .metadata import write_metadata
+from .publish import staged_output
 
 from .core import REQUIRED, write_manifest, write_matrix, write_table, NAME
 from .validate import validate, load_validated
 
 
-def from_anndata(adata, root: str | Path) -> None:
-    """Validate a staged dataset and publish only to a new directory."""
-    root = Path(root)
-    if root.exists():
-        raise FileExistsError(f"output already exists: {root}")
-    root.parent.mkdir(parents=True, exist_ok=True)
-    stage = Path(tempfile.mkdtemp(prefix=".scx-", dir=root.parent))
-    try:
+def from_anndata(adata, root: str | Path, *, overwrite=False) -> None:
+    """Validate in staging; explicit replacement keeps a rollback backup."""
+    with staged_output(root, directory=True, overwrite=overwrite) as stage:
         _from_anndata(adata, stage)
-        stage.rename(root)
-    finally:
-        if stage.exists():
-            shutil.rmtree(stage)
 
 
 def _from_anndata(adata, root: str | Path) -> None:

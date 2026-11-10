@@ -105,14 +105,17 @@
   x
 }
 
-#' Export a single Seurat assay to a new SCX directory.
+#' Export a single Seurat assay with validated, rollback-safe publication.
 #' @export
 write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(object),
                              counts_layer = "counts", normalized_layer = "data",
                              reductions = SeuratObject::Reductions(object),
-                             graphs = SeuratObject::Graphs(object)) {
+                             graphs = SeuratObject::Graphs(object), overwrite = FALSE,
+                             python = Sys.which("python")) {
   if (!inherits(object, "Seurat")) stop("object must be Seurat")
-  if (file.exists(path) || dir.exists(path)) stop("output already exists")
+  if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) stop("overwrite must be TRUE or FALSE")
+  if ((file.exists(path) || dir.exists(path)) && !overwrite) stop("output already exists; choose a new path or use overwrite = TRUE")
+  if (!nzchar(python)) stop("Python with scx-format installed is required for validated export")
   if (!assay %in% SeuratObject::Assays(object)) stop("unknown assay")
   layers <- SeuratObject::Layers(object[[assay]], search = NA)
   if (!counts_layer %in% layers) stop("exact counts layer required; join split layers explicitly with JoinLayers first")
@@ -124,6 +127,7 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
   if (is.complex(values) || any(!is.finite(values)) || any(values < 0)) stop("counts must be finite real and nonnegative")
   rm(values)
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  path <- file.path(normalizePath(dirname(path), winslash = "/", mustWork = TRUE), basename(path))
   stage <- tempfile(".scx-", tmpdir = dirname(path)); dir.create(stage)
   on.exit(unlink(stage, recursive = TRUE), add = TRUE)
   entries <- data.frame(path = c("cells.tsv.gz", "features.tsv.gz", "matrices/counts.mtx.gz", "metadata.schema.json"),
@@ -175,7 +179,10 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
   write.table(entries, con, sep = "\t", row.names = FALSE, quote = FALSE)
   close(con)
   warning("SCX exports one assay and selected layers, metadata, embeddings and graphs; identities, other layers, loadings and analysis history are not exported")
-  if (file.exists(path) || !file.rename(stage, path)) stop("could not publish SCX output")
+  output <- suppressWarnings(system2(python, c("-m", "scx.publish", shQuote(stage), shQuote(path),
+                                               if (overwrite) "--overwrite"), stdout = TRUE, stderr = TRUE))
+  status <- attr(output, "status")
+  if (!is.null(status) && status != 0L) stop("SCX publication failed:\n", paste(output, collapse = "\n"))
   invisible(path)
 }
 

@@ -1,6 +1,7 @@
 # Seurat adapter MVP
 
-Requires R, SeuratObject >= 5, Matrix and jsonlite. The adapter uses public
+Requires R, SeuratObject >= 5, Matrix, jsonlite and Python with scx-format >=
+0.1.0a5 installed (both export and import). The adapter uses public
 `LayerData` APIs and accepts a single Seurat assay (Assay5 or Assay). Source it
 from the repository root, or install the R package in this directory.
 
@@ -8,14 +9,20 @@ from the repository root, or install the R package in this directory.
 install.packages(c("SeuratObject", "jsonlite"))
 source("adapters/seurat/R/scx.R")
 write_scx_seurat(pbmc, "pbmc.scx", assay = "RNA")
+# Explicit replacement, using a selected Python environment:
+write_scx_seurat(pbmc, "pbmc.scx", assay = "RNA", overwrite = TRUE,
+                 python = "/path/to/python")
 # Import also requires Python with scx-format[anndata] installed.
 restored <- read_scx_seurat("pbmc.scx", python = "/path/to/python")
 # Explicit legacy output; independent of Seurat.object.assay.version option.
 legacy <- read_scx_seurat("pbmc.scx", python = "/path/to/python", assay_class = "Assay")
 ```
 
-Exports require a new destination and stage all files before publishing. Run
-`scx validate pbmc.scx` for independent Python validation. R import always calls
+Exports stage all files, run the complete Python validator, and publish using
+the shared Python transaction code. Existing destinations require explicit
+`overwrite = TRUE`; failed replacement restores or retains the previous output.
+See [safe I/O and manual recovery](../../docs/safe-io.md) for filesystem limits,
+the brief directory-replacement gap and hard-interruption behavior. R import always calls
 that validator before reading paths and data. It refuses feature IDs changed by
 Seurat rather than silently changing their alignment.
 
