@@ -1,5 +1,7 @@
 """Exercise the downloaded Python file with installed SCX imports forbidden."""
 import argparse
+import csv
+import gzip
 import importlib.abc
 import importlib.metadata
 import importlib.util
@@ -61,6 +63,19 @@ def main():
     full = scx.read_scx(out / "full.scx")
     np.testing.assert_array_equal(a.obsm["pca"], full.obsm["pca"])
     np.testing.assert_array_equal(a.obsp["nn"].toarray(), full.obsp["nn"].toarray())
+    scx.to_tsv(out / "full.scx", out / "counts.tsv")
+    scx.to_tsv(out / "full.scx", out / "normalized.tsv.gz", matrix="normalized",
+               cells=['c3','c1'], features=['g2','g1'])
+    with gzip.open(out / "normalized.tsv.gz", 'rt', encoding='utf-8') as handle:
+        table = list(csv.reader(handle, delimiter='\t'))
+    assert table[0] == ['cell_id','g2','g1'] and [r[0] for r in table[1:]] == ['c3','c1']
+    np.testing.assert_array_equal(np.array([r[1:] for r in table[1:]], dtype=float), [[1.,3.4],[1.2,0.]])
+    try:
+        scx.to_tsv(out / "full.scx", out / "counts.tsv")
+    except FileExistsError:
+        pass
+    else:
+        raise AssertionError("TSV was overwritten")
     before = (out / "full.scx/matrices/counts.mtx.gz").read_bytes()
     try:
         scx.write_scx(a, out / "full.scx")
@@ -95,7 +110,7 @@ def main():
     assert installed == sorted((d.metadata["Name"], d.version) for d in importlib.metadata.distributions())
     report = {"passed": True, "installed_scx_imports": 0, "package_installations": 0,
               "shape": [3, 2], "typed_metadata": True, "analysis": True,
-              "overwrite_protection": True, "corrupt_gzip_rejected": True, "CLI": True}
+              "overwrite_protection": True, "corrupt_gzip_rejected": True, "CLI": True, "TSV": True}
     (out / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report))
 

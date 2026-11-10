@@ -1,5 +1,8 @@
 # Test the one-file source() route; no scxSeurat, native helpers, or subprocesses.
 args <- commandArgs(TRUE)
+# Rscript can inherit an invalid Unix locale name on Windows. Use its native
+# UTF-8 locale for Unicode fixture creation (CI already uses this locale).
+if (.Platform$OS.type == "windows" && !isTRUE(l10n_info()[["UTF-8"]])) Sys.setlocale("LC_CTYPE", ".UTF-8")
 stopifnot(length(args) %in% c(1L, 2L), !dir.exists(args[1]))
 dir.create(args[1], recursive = TRUE)
 library(SeuratObject)
@@ -50,6 +53,31 @@ for (type in c("Assay", "Assay5")) {
   con <- gzfile(cells, "wt"); writeLines(c("cell_id", "duplicate", "duplicate"), con); close(con)
   fails(read_scx(full))
   writeBin(original_cells, cells)
+  tsv <- file.path(args[1],paste0(type,"-counts.tsv"))
+  to_tsv(full,tsv)
+  table <- read.delim(tsv,check.names=FALSE,stringsAsFactors=FALSE)
+  stopifnot(identical(names(table),c("cell_id","g1","g2","g3")),
+    identical(table$cell_id,c("c1","c2")), max(abs(as.matrix(table[-1])-matrix(c(1,0,0,2,3,4),2))) == 0)
+  # Fail the test if the export ever densifies more than a single sparse row.
+  tsv_env <- environment(to_tsv)
+  original_as_matrix <- as.matrix
+  tsv_env$as.matrix <- function(x,...) {
+    if (inherits(x,"Matrix")) stopifnot(nrow(x) == 1L)
+    original_as_matrix(x,...)
+  }
+  gz <- file.path(args[1],paste0(type,"-normalized.tsv.gz"))
+  to_tsv(full,gz,matrix="normalized",cells=c("c2","c1"),features=c("g3","g1"))
+  rm("as.matrix",envir=tsv_env)
+  con <- gzfile(gz,"rt"); table <- read.delim(con,check.names=FALSE); close(con)
+  stopifnot(identical(names(table),c("cell_id","g3","g1")), identical(table$cell_id,c("c2","c1")),
+    max(abs(as.matrix(table[-1])-log1p(matrix(c(4,3,0,1),2)))) < 1e-12)
+  hash <- digest::digest(tsv,file=TRUE,algo="sha256")
+  fails(to_tsv(full,tsv),"already exists")
+  stopifnot(hash == digest::digest(tsv,file=TRUE,algo="sha256"))
+  for (selection in list(character(),c("c1","c1"),"missing",NA_character_))
+    fails(to_tsv(full,file.path(args[1],"bad.tsv"),cells=selection))
+  fails(to_tsv(full,file.path(full,"new/out.tsv")),"outside")
+  stopifnot(!dir.exists(file.path(full,"new")), !file.exists(file.path(args[1],"bad.tsv")))
 }
 if (length(args) == 2L) for (type in c("Assay", "Assay5")) {
   python <- read_scx(file.path(args[2], "cli.scx"), assay_class=type)
@@ -71,9 +99,30 @@ stopifnot(dir.exists(partial), !file.exists(file.path(partial,"manifest.tsv")))
 fails(read_scx(partial))
 fails(write_scx(tiny_seurat(), partial), "already exists")
 env$.scx_copy <- original_copy
+# IDs containing quotes/Unicode must survive ordinary TSV quoting.
+counts <- Matrix(matrix(c(1,0,3,0,2,4),3),sparse=TRUE)
+dimnames(counts) <- list(c('gene"\u03b2','g2','g3'),c('cell"\u03b1','c2'))
+quoted <- CreateSeuratObject(CreateAssay5Object(counts=counts))
+only <- file.path(args[1],"quoted.scx")
+write_scx(quoted,only,normalized=NULL)
+quoted_tsv <- file.path(args[1],"quoted.tsv")
+to_tsv(only,quoted_tsv)
+table <- read.delim(quoted_tsv,check.names=FALSE,stringsAsFactors=FALSE,fileEncoding="UTF-8")
+stopifnot(names(table)[2] == 'gene"\u03b2', table$cell_id[1] == 'cell"\u03b1')
+fails(to_tsv(only,file.path(args[1],"no-normalized.tsv"),matrix="normalized"),"no normalized")
+# A failed raw copy must retain the partial file and lock, never overwrite.
+failed_tsv <- env$.scx_tsv_target(file.path(args[1],"failed-copy.tsv.gz"))
+env$writeBin <- function(object,con,...) {
+  if (identical(summary(con)$description,failed_tsv)) stop("injected TSV copy failure")
+  base::writeBin(object,con,...)
+}
+fails(to_tsv(only,failed_tsv),"Incomplete TSV retained")
+rm("writeBin",envir=env)
+stopifnot(file.exists(failed_tsv), file.exists(env$.scx_lock_path(failed_tsv)))
 stopifnot(!"scxSeurat" %in% loadedNamespaces())
 report <- list(passed=TRUE, installed_scx_loads=0, package_installations=0,
   external_process_calls=0, assays=c("Assay","Assay5"), shape=c(2,3), typed_metadata=TRUE,
-  overwrite_protection=TRUE, interrupted_copy_rejected=TRUE, gzip_crc_and_truncation_rejected=TRUE)
+  overwrite_protection=TRUE, interrupted_copy_rejected=TRUE, gzip_crc_and_truncation_rejected=TRUE,
+  TSV=TRUE, TSV_one_dense_row=TRUE, TSV_interrupted_copy_rejected=TRUE)
 writeLines(jsonlite::toJSON(report,auto_unbox=TRUE,pretty=TRUE), file.path(args[1],"report.json"))
 cat("Standalone R validation passed\n")

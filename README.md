@@ -41,6 +41,12 @@ publishes the manifest last. Python retains staged replacement via
 native validation and replacement with rollback. See [safety differences and
 recovery](docs/install.md#shared-default-and-safety).
 
+To inspect expression as an ordinary dense TSV, use the same API in both
+languages: `to_tsv(path, output, matrix="counts", cells=..., features=...)`
+(Python: `scx.to_tsv`). `.tsv.gz`, normalized expression and ID-ordered subsets
+are supported. Only one output row becomes dense; existing files are always
+protected. See [TSV export and memory limits](docs/tsv-export.md).
+
 - [Usage and Seurat ↔ AnnData examples](docs/getting-started.md)
 - [Support, dtype limits and errors](compatibility/README.md)
 - [Format](specification/SCX-v0.1.md) and [metadata schema](specification/metadata-schema-v1.md)

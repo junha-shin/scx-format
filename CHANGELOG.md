@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — matrix TSV export
+
+- Shared no-install `to_tsv(path, output, matrix, cells, features)` API for Python
+  and R. Counts/normalized selection, ordered ID subsets, UTF-8 TSV and TSV.gz.
+- Full SCX validation retains only the selected expression matrix; output is
+  densified one row at a time. Sparse input/validation memory remains required.
+- Existing outputs and writes inside the SCX input are refused. Python uses
+  staged exclusive publication; pure R stages, exclusively creates, copies and
+  verifies bytes, retaining partial files/locks on publication failure.
+- Tests cover output values, ID ordering/quoting, gzip, invalid/corrupt inputs,
+  single-row memory behavior, failed copies and R/Python TSV agreement.
+
 ## Unreleased — no-install scripts
 
 - Self-contained `standalone/scx.py` and `standalone/scx.R`, generated from the

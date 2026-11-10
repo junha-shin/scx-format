@@ -89,3 +89,10 @@ to existing CLI workflows requiring embeddings/graphs. Legacy `from_anndata`
 and `write_scx_seurat` retain their full defaults. The format/metadata schema
 are unchanged, and existing SCX datasets remain readable. R no longer needs
 Python; alpha.5 release assets remain unchanged.
+## Inspect expression in a regular TSV
+
+Python: `scx.to_tsv("sample.scx", "counts.tsv.gz")`.
+R: `to_tsv("sample.scx", "counts.tsv.gz")`.
+Select `matrix="normalized"` or provide cell/feature IDs for a subset.
+Existing output is always refused. See [TSV export](tsv-export.md) for complete
+examples and the sparse-input / single-dense-row memory contract.

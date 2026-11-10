@@ -3,7 +3,7 @@
 .scx_ofile <- tryCatch(sys.frame(1)$ofile, error = function(e) NULL)
 if (!isNamespace(environment()) && !is.null(.scx_ofile) && !exists(".scx_inspect", envir = environment(), inherits = FALSE)) {
   .scx_source_dir <- dirname(.scx_ofile)
-  for (.scx_support in c("publication.R", "validation.R", "api.R"))
+  for (.scx_support in c("publication.R", "validation.R", "api.R", "tsv.R"))
     sys.source(file.path(.scx_source_dir, .scx_support), envir = environment())
   rm(.scx_source_dir, .scx_support)
 }

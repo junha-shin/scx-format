@@ -32,7 +32,7 @@ class _BundledSCX(_abc.MetaPathFinder, _abc.Loader):
 
 if "_scx_standalone" not in _sys.modules:
     _sys.meta_path.insert(0, _BundledSCX())
-from _scx_standalone import read_scx, write_scx, validate_scx, __version__
+from _scx_standalone import read_scx, write_scx, validate_scx, to_tsv, __version__
 
 if __name__ == "__main__":
     from _scx_standalone.cli import main
@@ -56,9 +56,10 @@ if __name__ == "__main__":
     for content in [publication,
                     (rdir / "validation.R").read_text(encoding="utf-8"), scx,
                     (rdir / "api.R").read_text(encoding="utf-8"),
+                    (rdir / "tsv.R").read_text(encoding="utf-8"),
                     (ROOT / "standalone/r-runtime.R").read_text(encoding="utf-8")]:
         r += content + "\n"
-    r += '''for (.name in c("read_scx", "write_scx", "validate_scx")) assign(.name, get(.name), envir=.target)
+    r += '''for (.name in c("read_scx", "write_scx", "validate_scx", "to_tsv")) assign(.name, get(.name), envir=.target)
 invisible(NULL)
 })(environment())
 '''

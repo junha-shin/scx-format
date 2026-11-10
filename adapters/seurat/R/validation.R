@@ -174,7 +174,7 @@
   .scx_decode_frame(table, spec)
 }
 
-.scx_inspect <- function(path, retain = FALSE) {
+.scx_inspect <- function(path, retain = FALSE, retain_expression = NULL) {
   path <- normalizePath(path, winslash = "/", mustWork = TRUE)
   manifest <- .scx_manifest(path)
   for (relative in manifest$path) if (!file.exists(.scx_safe_path(path, relative))) stop("missing file: ", file.path(path, relative))
@@ -205,7 +205,7 @@
     if (row$role %in% c("counts", "normalized", "cell_graph")) {
       x <- .scx_matrix(file, if (row$role == "cell_graph") rep(shape[1], 2L) else shape)
       if (row$role == "counts" && any(.scx_values(x) < 0)) stop(file, ": counts must be nonnegative")
-      if (retain) payload$matrices[[row$path]] <- x
+      if (retain || identical(row$role, retain_expression)) payload$matrices[[row$path]] <- x
       rm(x)
     } else if (row$role == "embedding") {
       table <- .scx_table(file)
@@ -217,7 +217,7 @@
       })
     }
   }
-  if (retain) payload else list(cells = shape[1], features = shape[2], files = nrow(manifest))
+  if (retain || !is.null(retain_expression)) payload else list(cells = shape[1], features = shape[2], files = nrow(manifest))
 }
 
 #' Validate the R-readable SCX profile without Python.

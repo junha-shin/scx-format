@@ -18,7 +18,7 @@ def _ids(table: pd.DataFrame, column: str) -> list[str]:
     return values
 
 
-def _inspect(root: str | Path, *, retain=False):
+def _inspect(root: str | Path, *, retain=False, retain_expression=None):
     """Check every resource once; retain it only for an importing caller."""
     root = Path(root)
     manifest = read_manifest(root)
@@ -44,14 +44,14 @@ def _inspect(root: str | Path, *, retain=False):
         feature_metadata = feature_table.set_index('feature_id')
     shape = (len(cells), len(features))
     payload = {'cells': cell_metadata, 'features': feature_metadata, 'normalized': None,
-               'embeddings': {}, 'graphs': {}, 'typed_metadata': (manifest.role == 'metadata_schema').any()} if retain else None
+               'embeddings': {}, 'graphs': {}, 'typed_metadata': (manifest.role == 'metadata_schema').any()} if retain or retain_expression else None
     del cell_table, feature_table, cell_metadata, feature_metadata
     matrix = read_matrix(root / "matrices/counts.mtx.gz")
     if matrix.shape != shape:
         raise SCXError(f"{root / 'matrices/counts.mtx.gz'}: counts shape {matrix.shape} does not match CELL x FEATURE {shape}")
     if not np.isfinite(matrix.data).all() or (matrix.data < 0).any():
         raise SCXError(f"{root / 'matrices/counts.mtx.gz'}: counts must be finite and nonnegative")
-    if retain:
+    if retain or retain_expression == 'counts':
         payload['counts'] = matrix
     del matrix
     for row in manifest.itertuples(index=False):
@@ -60,7 +60,7 @@ def _inspect(root: str | Path, *, retain=False):
             matrix = read_matrix(path)
             if matrix.shape != shape or not np.isfinite(matrix.data).all():
                 raise SCXError(f"{path}: normalized matrix must have shape {shape} and finite values")
-            if retain:
+            if retain or retain_expression == 'normalized':
                 payload['normalized'] = matrix
             del matrix
         elif row.role == "cell_graph":

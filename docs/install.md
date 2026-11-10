@@ -89,3 +89,9 @@ are generated from checked-in sources and CI rejects stale generated files.
 Package installation is [optional](package-install.md): useful for an installed
 CLI, reusable imports, or R's faster native validator and staged replacement.
 The alpha.6 packages are unchanged and do not contain the standalone files.
+
+## Ordinary TSV output
+
+The same downloaded files also expose `to_tsv()` for counts/normalized expression,
+ID-selected cells/features and `.tsv.gz`. No additional dependency or installation
+is required. See [matrix TSV export](tsv-export.md) for memory and safety limits.
