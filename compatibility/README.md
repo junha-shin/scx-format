@@ -1,6 +1,6 @@
 # Compatibility and support matrix
 
-Current main's R adapter 0.1.4 provides [R-only validation and safe
+Alpha.6 R adapter 0.1.5 provides [R-only validation and safe
 publication](../docs/r-only.md), independently of Python. The alpha.5 release
 contains R 0.1.3 and retains its original requirements.
 
@@ -14,6 +14,7 @@ Exact environment constraints below are the reproducible supported test profiles
 | AnnData | Python in CI | pandas | NumPy | SciPy | Zarr | Assay forms tested | Local PBMC3k result |
 |---|---|---|---|---|---|---|---|
 | 0.11.4 | 3.10 (unit) | 2.2.3 | 1.26.4 | 1.15.3 | 2.18.3 / numcodecs 0.13.1 | Unit suite | PBMC3k uses 3.12 profile below |
+| 0.11.4 | 3.10 (minimum SciPy) | 2.2.3 | 1.26.4 | 1.11.4 | 2.18.3 / numcodecs 0.13.1 | Unit suite | Synthetic CI fixture |
 | 0.11.4 | 3.12 (bridge) | 2.2.3 | 2.2.6 | 1.15.3 | 2.18.7 | legacy Assay + Assay5 | Both pass; matrix error 0 |
 | 0.12.3 | 3.12 | 2.2.3 | 2.2.6 | 1.15.3 | 2.18.7 | legacy Assay + Assay5 | Both pass; matrix error 0 |
 | 0.13.4 | 3.12 | 3.0.6 | 2.5.3 | 1.18.1 | 3.4.0 | legacy Assay + Assay5 | Both pass; matrix error 0 |
@@ -33,15 +34,19 @@ from the same genuine PBMC3k Seurat analysis; conversion to legacy Assay first
 asserts that counts, normalized values and feature metadata have not changed.
 The original 10x archive provenance is in [the real-data example](../examples/seurat/README.md).
 
-CI has three Python environment jobs, three bridge jobs, a Windows safety job
-and a benchmark smoke job. Every bridge job
+CI has four Python environment jobs, three bridge jobs, a Windows safety job
+and a benchmark smoke job, two R-only jobs and three binary-distribution jobs.
+Default public writes preserve expression and typed metadata; embeddings/graphs
+require `analysis=True` / `analysis=TRUE` (CLI `--analysis`). Read scope and
+dtype safety are unchanged. Recorded PBMC3k reports predate the new wrapper API.
+Every bridge job
 tests both assay classes, H5AD serialization, CELL × FEATURE orientation on a
 nonsquare matrix, an asymmetric graph, dtype/missing/category preservation and
 AnnData → SCX → Seurat import into the requested assay class. Small fixtures run
 in CI; PBMC3k reports record the separate local real-data validation. CI uploads
 JUnit and per-environment JSON artifacts. Recorded success is evidence for the
 listed runs, not a performance or general biological correctness claim.
-The Python suite includes 86 cases per AnnData environment (two symlink cases
+The Python suite includes 91 cases per AnnData environment (two symlink cases
 may skip on Windows without link-creation privileges); R tests cover both assay
 classes plus native validation, corruption, rollback, races and hard interruption.
 Counts-only selection and dense/CSR/CSC

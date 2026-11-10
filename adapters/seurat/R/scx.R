@@ -3,7 +3,7 @@
 .scx_ofile <- tryCatch(sys.frame(1)$ofile, error = function(e) NULL)
 if (!isNamespace(environment()) && !is.null(.scx_ofile) && !exists(".scx_inspect", envir = environment(), inherits = FALSE)) {
   .scx_source_dir <- dirname(.scx_ofile)
-  for (.scx_support in c("publication.R", "validation.R"))
+  for (.scx_support in c("publication.R", "validation.R", "api.R"))
     sys.source(file.path(.scx_source_dir, .scx_support), envir = environment())
   rm(.scx_source_dir, .scx_support)
 }
@@ -117,7 +117,7 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
                              counts_layer = "counts", normalized_layer = "data",
                              reductions = SeuratObject::Reductions(object),
                              graphs = SeuratObject::Graphs(object), overwrite = FALSE,
-                             python = NULL) {
+                             python = NULL, warn_scope = TRUE) {
   if (!inherits(object, "Seurat")) stop("object must be Seurat")
   if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) stop("overwrite must be TRUE or FALSE")
   if ((file.exists(path) || dir.exists(path)) && !overwrite) stop("output already exists; choose a new path or use overwrite = TRUE")
@@ -185,7 +185,7 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
   writeLines("# scx_version=0.1-alpha", con)
   write.table(entries, con, sep = "\t", row.names = FALSE, quote = FALSE)
   close(con)
-  warning("SCX exports one assay and selected layers, metadata, embeddings and graphs; identities, other layers, loadings and analysis history are not exported")
+  if (warn_scope) warning("SCX exports one assay and selected layers, metadata, embeddings and graphs; identities, other layers, loadings and analysis history are not exported")
   .scx_publish(work, path, overwrite)
   invisible(path)
 }

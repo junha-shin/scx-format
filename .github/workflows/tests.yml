@@ -9,16 +9,22 @@ jobs:
         include:
           - python: '3.10'
             anndata: '0.11.4'
+            requirements: compatibility/anndata-0.11.4.txt
           - python: '3.12'
             anndata: '0.12.3'
+            requirements: compatibility/anndata-0.12.3.txt
           - python: '3.12'
             anndata: '0.13.4'
+            requirements: compatibility/anndata-0.13.4.txt
+          - python: '3.10'
+            anndata: '0.11.4-scipy1.11'
+            requirements: compatibility/scipy-1.11.4.txt
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - run: pip install -e '.[test]' -r compatibility/anndata-${{ matrix.anndata }}.txt
+      - run: pip install -e '.[test]' -r ${{ matrix.requirements }}
       - run: pytest -q --junitxml=.compat-results/python.xml
       - uses: actions/upload-artifact@v4
         if: always()
@@ -62,8 +68,8 @@ jobs:
           python -m build
           python -m pip install --force-reinstall --no-deps dist/*.whl
           R CMD build adapters/seurat
-          R CMD INSTALL scxSeurat_0.1.4.tar.gz
-          mv scxSeurat_0.1.4.tar.gz dist/
+          R CMD INSTALL scxSeurat_0.1.5.tar.gz
+          mv scxSeurat_0.1.5.tar.gz dist/
           python examples/quickstart/verify.py --output .compat-results/release-smoke
       - uses: actions/upload-artifact@v4
         if: matrix.anndata == '0.13.4'
@@ -115,6 +121,7 @@ jobs:
       - if: runner.os == 'Windows'
         run: R CMD INSTALL --build adapters/seurat
       - run: Rscript adapters/seurat/scripts/run-tests.R
+      - run: Rscript adapters/seurat/scripts/test-installer.R
       - name: Hide Python and forbid subprocess calls during installed-package round trip
         run: Rscript adapters/seurat/scripts/r-only.R .r-tests/r-only
       - uses: actions/upload-artifact@v4
@@ -123,6 +130,29 @@ jobs:
           path: |
             .r-tests/r-only/report.json
             scxSeurat_*.zip
+  r-distribution:
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5.2'
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: adapters/seurat
+      - run: Rscript scripts/build_r_assets.R dist/r-assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r-distribution-${{ matrix.os }}
+          path: dist/r-assets/
   windows-safety:
     runs-on: windows-latest
     steps:

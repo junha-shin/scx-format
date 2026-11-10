@@ -29,10 +29,10 @@ for (assay_class in c("Assay", "Assay5")) {
   graph <- as.Graph(graph); DefaultAssay(graph) <- "RNA"
   before[["RNA_nn"]] <- graph
   root <- file.path(args[1], assay_class)
-  suppressWarnings(write_scx_seurat(before, root))
-  suppressWarnings(write_scx_seurat(before, root, overwrite = TRUE, python = "/nonexistent/python"))
+  suppressWarnings(write_scx(before, root, analysis = TRUE))
+  suppressWarnings(write_scx(before, root, overwrite = TRUE, analysis = TRUE))
   stopifnot(validate_scx(root)$cells == 2L)
-  after <- read_scx_seurat(root, assay_class = assay_class, python = "/nonexistent/python")
+  after <- read_scx(root, assay_class = assay_class)
   stopifnot(identical(before[[]], after[[]]), identical(before[["RNA"]][[]], after[["RNA"]][[]]))
   for (layer in c("counts", "data")) stopifnot(max(abs(LayerData(before, layer = layer) - LayerData(after, layer = layer))) == 0)
   stopifnot(max(abs(Embeddings(before[["pca"]]) - Embeddings(after[["pca"]]))) == 0)

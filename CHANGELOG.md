@@ -1,6 +1,23 @@
 # Changelog
 
-## Unreleased — R adapter 0.1.4
+## v0.1.0-alpha.6 — simpler installation and object I/O
+
+Python **0.1.0a6**, R **0.1.5**. Format **0.1-alpha** and schema **1.0** unchanged.
+
+- Same `read_scx` / `write_scx` names in R and Python; validate automatically.
+- Basic default: counts, optional normalized matrix and typed metadata. Add
+  `analysis=True` / `analysis=TRUE` for embeddings and cell graphs. CLI exports
+  now use the basic default: existing workflows need `--analysis` to retain them.
+- Explicit source selection via `counts` / `normalized`. Counts are never guessed.
+  Legacy adapters preserve their original broader defaults.
+- One install in the existing environment: release wheel and checksum-verified
+  R binary installer; only missing R dependencies are installed. No Python for R.
+- SciPy minimum lowered to 1.11.4 with a dedicated compatibility CI profile.
+- R binary build/install round trips on Windows, macOS and Ubuntu, plus existing
+  corruption/interruption/overwrite and cross-language tests. Published alpha.5
+  packages are unchanged. Single-assay and native R dtype limits still apply.
+
+### Included R-only groundwork (previously main-only 0.1.4)
 
 - Seurat ↔ SCX runs without Python, including the public `validate_scx()` API.
 - R-native structural, typed metadata, axis and sparse matrix validation, with

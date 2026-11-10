@@ -9,7 +9,7 @@ write_scx_seurat(object, path, assay = SeuratObject::DefaultAssay(object),
   counts_layer = "counts", normalized_layer = "data",
   reductions = SeuratObject::Reductions(object),
   graphs = SeuratObject::Graphs(object), overwrite = FALSE,
-  python = NULL)
+  python = NULL, warn_scope = TRUE)
 read_scx_seurat(path, assay = "RNA", python = NULL,
   assay_class = c("Assay5", "Assay"))
 validate_scx(path)
@@ -24,6 +24,7 @@ validate_scx(path)
 \item{graphs}{Names of cell graphs to export, or character() to omit.}
 \item{overwrite}{Logical, default FALSE. Explicitly replace an existing SCX directory after staging and validation. Replaces the whole directory, including unlisted files.}
 \item{python}{Unused compatibility argument. Python is not inspected or invoked.}
+\item{warn_scope}{Report the legacy full-profile export scope. New write_scx uses targeted omission warnings.}
 \item{assay_class}{Explicit output assay class: Assay5 (default) or legacy Assay.}
 }
 \value{Export invisibly returns the output path; import returns a Seurat object. Validation returns a list with cells, features and files counts.}

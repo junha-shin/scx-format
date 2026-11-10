@@ -12,9 +12,9 @@ trace(base::system2, tracer = quote(stop("external process forbidden")), print =
 Sys.setenv(PATH = "", PYTHON = "/nonexistent/python", RETICULATE_PYTHON = "/nonexistent/python")
 dir.create(args[2], recursive = TRUE)
 root <- file.path(args[2], "dataset.scx")
-suppressWarnings(write_scx_seurat(before, root, assay = assay))
-suppressWarnings(write_scx_seurat(before, root, assay = assay, overwrite = TRUE))
-after <- read_scx_seurat(root, assay = assay,
+suppressWarnings(write_scx(before, root, assay = assay, analysis = TRUE))
+suppressWarnings(write_scx(before, root, assay = assay, overwrite = TRUE, analysis = TRUE))
+after <- read_scx(root, assay = assay,
   assay_class = if (inherits(before[[assay]], "Assay5")) "Assay5" else "Assay")
 stopifnot(identical(before[[]], after[[]]), identical(before[[assay]][[]], after[[assay]][[]]))
 stopifnot(identical(colnames(before), colnames(after)), identical(rownames(before), rownames(after)))

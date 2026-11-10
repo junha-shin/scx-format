@@ -13,6 +13,15 @@ limits; directory replacement need not be an atomic reader snapshot. See the
 reference implementation's [safe I/O contract](../docs/safe-io.md).
 New writers MUST emit the [metadata schema 1.0 extension](metadata-schema-v1.md), preserving numeric/boolean/categorical types and missing values. Legacy datasets without this extension load as text with a warning. Unsupported analysis objects omitted by an adapter MUST produce a warning.
 
+## Reference writer profiles
+
+The public `write_scx` API and CLI default to counts, optional normalized
+expression and typed cell/feature metadata. `analysis=True` (R `TRUE`; CLI
+`--analysis`) adds supported embeddings and cell graphs. Omitted existing
+analysis objects produce a warning. Readers restore supported resources present
+in the dataset regardless of the writer profile. Legacy adapter defaults remain
+unchanged. These profiles do not change the format or metadata schema.
+
 ## Layout and axes
 
 An SCX dataset is a directory. It MUST contain `manifest.tsv`, `cells.tsv.gz`, `features.tsv.gz`, and `matrices/counts.mtx.gz`. All paths in the manifest are relative to the dataset root. The expression matrix MUST be CELL × FEATURE; the cell and feature table row orders define its axes. A cell graph is CELL × CELL, and an embedding is CELL × COMPONENT.

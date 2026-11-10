@@ -1,30 +1,24 @@
-# Seurat adapter MVP
+# Seurat ↔ SCX
 
-Version **0.1.4 on main** requires R, SeuratObject >= 5, Matrix, jsonlite and
-digest. **Seurat ↔ SCX does not require Python.** The adapter uses public
-`LayerData` APIs and accepts a single Seurat assay (Assay5 or Assay). Source it
-from the repository root after installing the package, or use the installed
-package directly. Small compiled R helpers provide streaming gzip integrity
-checks and atomic no-replace renames; source installation needs an R toolchain
-and zlib. See [R-only installation and validation](../../docs/r-only.md).
-
-For the released package and one Python/R environment, follow the
-[combined installation guide](../../docs/getting-started.md). It includes
-both conversion directions, installed-package validation and recovery links.
-The tagged alpha.5 release contains R 0.1.3 and still requires Python. The
-`source()` workflow is for development after installing 0.1.4's native helpers.
+Version **0.1.5** supports SeuratObject >=5, legacy Assay and Assay5.
+Python is unnecessary. Install once in your existing Seurat environment:
 
 ```r
-install.packages(c("SeuratObject", "jsonlite", "digest"))
-install.packages("adapters/seurat", repos = NULL, type = "source")
+source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.6/install.R")
 library(scxSeurat)
-write_scx_seurat(pbmc, "pbmc.scx", assay = "RNA")
-validate_scx("pbmc.scx")
-write_scx_seurat(pbmc, "pbmc.scx", assay = "RNA", overwrite = TRUE)
-restored <- read_scx_seurat("pbmc.scx")
-# Explicit legacy output; independent of Seurat.object.assay.version option.
-legacy <- read_scx_seurat("pbmc.scx", assay_class = "Assay")
+write_scx(pbmc, "pbmc.scx")
+restored <- read_scx("pbmc.scx")
+# Embeddings and cell graphs are an explicit option:
+write_scx(pbmc, "analysis.scx", analysis = TRUE)
 ```
+
+The basic profile preserves counts, optional normalized expression and typed
+cell/feature metadata. Both languages use the same `read_scx` / `write_scx`
+names; default R sources are `counts` / `data`. See [installation](../../docs/install.md)
+and [cross-language examples](../../docs/getting-started.md). Legacy
+`write_scx_seurat` / `read_scx_seurat` retain their full defaults, including
+selective `reductions` / `graphs` controls. Development `source()` still needs
+installed native helpers; see [R-only details](../../docs/r-only.md).
 
 Exports stage all files, run the R-native validator, and publish using
 R's transaction code and registered native helpers. Existing destinations require explicit
@@ -58,9 +52,9 @@ written as explicit numeric Matrix Market `general` matrices, including both
 directions for symmetric graphs and values for binary graphs.
 
 Exact layer names are required: split layers such as `counts.batch1` must first
-be explicitly joined using Seurat's `JoinLayers`. Use `counts_layer` and
-`normalized_layer` to select different exact layer names; set
-`normalized_layer = NULL` for counts-only. A missing default `data` layer warns
+be explicitly joined using Seurat's `JoinLayers`. Use public `counts` and `normalized` (legacy `counts_layer` and
+`normalized_layer`) to select different exact layer names; set
+`normalized = NULL` for counts-only. A missing default `data` layer warns
 and exports counts-only. Use `reductions` and `graphs` to choose named objects
 or `character()` to omit them. Every selected object must cover the canonical
 axis exactly; matching IDs are reordered, while partial/extra cells or features

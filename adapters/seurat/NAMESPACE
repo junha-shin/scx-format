@@ -1,4 +1,6 @@
 export(write_scx_seurat)
+export(write_scx)
+export(read_scx)
 export(read_scx_seurat)
 export(validate_scx)
 useDynLib(scxSeurat, .registration = TRUE)

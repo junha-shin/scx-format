@@ -75,7 +75,8 @@ def main():
     cli = [sys.executable, '-m', 'scx.cli']
     logs = []
     for command in [('from-h5ad', source, folder), ('validate', folder), ('to-h5ad', folder, target)]:
-        result = subprocess.run(cli + [str(x) for x in command], capture_output=True, text=True)
+        extra = ['--analysis'] if command[0] == 'from-h5ad' else []
+        result = subprocess.run(cli + [str(x) for x in command] + extra, capture_output=True, text=True)
         logs.append({'command': command[0], 'returncode': result.returncode,
                      'stdout': result.stdout, 'stderr': result.stderr.replace(str(Path(__file__).resolve().parents[2]), '<repo>')})
         if result.returncode:

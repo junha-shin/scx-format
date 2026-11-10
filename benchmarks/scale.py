@@ -24,6 +24,10 @@ def worker(args):
     sys.path.insert(0, str(args.implementation.resolve()))
     from scx.cli import main
     import scx
+    if args.command[0] == 'from-h5ad' and hasattr(scx, 'write_scx') and '--analysis' not in args.command:
+        # Preserve the measured workload with the new opt-in profile, while
+        # historical implementations without this flag keep their own defaults.
+        args.command.append('--analysis')
     from threadpoolctl import threadpool_limits
     threadpool_limits(limits=1)
     assert Path(scx.__file__).resolve().is_relative_to(args.implementation.resolve())

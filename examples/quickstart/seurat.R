@@ -26,13 +26,13 @@ if (mode == "create") {
     SeuratObject = as.character(packageVersion("SeuratObject"))), auto_unbox = TRUE),
     file.path(dirname(input), "R-versions.json"))
   saveRDS(object, input)
-  write_scx_seurat(object, output, python = python)
+  write_scx(object, output, analysis = TRUE)
 } else if (mode == "convert") {
-  object <- read_scx_seurat(input, python = python)
-  write_scx_seurat(object, output, python = python)
+  object <- read_scx(input)
+  write_scx(object, output, analysis = TRUE)
 } else if (mode == "verify") {
   before <- readRDS(input)
-  after <- read_scx_seurat(output, python = python)
+  after <- read_scx(output)
   stopifnot(identical(colnames(before), colnames(after)), identical(rownames(before), rownames(after)))
   stopifnot(identical(before[[]], after[[]]), identical(before[["RNA"]][[]], after[["RNA"]][[]]))
   for (layer in c("counts", "data")) stopifnot(

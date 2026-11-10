@@ -32,3 +32,4 @@ adapters/seurat/src/*.dll
 adapters/seurat/src/*.so
 scxSeurat_*.tar.gz
 scxSeurat_*.zip
+scxSeurat_*.tgz

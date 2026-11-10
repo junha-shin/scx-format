@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 from scx.h5ad import write_h5ad
+from scx import read_scx, write_scx
 
 
 def sample():
@@ -88,7 +89,11 @@ def main():
         source = output/'input.h5ad'
         write_h5ad(sample(), source)
         before = ad.read_h5ad(source)
-        scx('from-h5ad', source, output/'python.scx')
+        write_scx(before, output/'basic.scx')
+        basic_expected = before.copy()
+        basic_expected.obsm.clear(); basic_expected.obsp.clear()
+        checks['basic_object_api'] = compare(basic_expected, read_scx(output/'basic.scx'))
+        scx('from-h5ad', source, output/'python.scx', '--analysis')
         scx('validate', output/'python.scx')
         scx('to-h5ad', output/'python.scx', output/'python.h5ad')
         checks['python_h5ad_scx_h5ad'] = compare(before, ad.read_h5ad(output/'python.h5ad'))
@@ -100,7 +105,7 @@ def main():
             run([args.rscript, str(script), 'create', output/'source.rds', output/'r.scx', sys.executable])
             scx('to-h5ad', output/'r.scx', output/'r.h5ad')
             checks['seurat_anndata'] = compare(before, ad.read_h5ad(output/'r.h5ad'))
-            scx('from-h5ad', output/'r.h5ad', output/'r-back.scx')
+            scx('from-h5ad', output/'r.h5ad', output/'r-back.scx', '--analysis')
             run([args.rscript, str(script), 'verify', output/'source.rds', output/'r-back.scx', sys.executable])
             checks['seurat_anndata_seurat'] = 'passed'
         report = {'passed': True, 'python_only': args.python_only, 'python': platform.python_version(),

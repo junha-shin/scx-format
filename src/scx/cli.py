@@ -16,6 +16,9 @@ def main(argv=None) -> int:
     export.add_argument("input")
     export.add_argument("output")
     export.add_argument("--overwrite", action="store_true", help="replace an existing SCX output after validation")
+    export.add_argument("--analysis", action="store_true", help="also export embeddings and cell graphs")
+    export.add_argument("--counts", default="counts", help="counts layer name, or X only when X contains raw counts")
+    export.add_argument("--normalized", default="X", help="normalized layer name, X, or none")
     imported = commands.add_parser("to-h5ad", help="convert SCX to AnnData")
     imported.add_argument("input")
     imported.add_argument("output")
@@ -27,10 +30,11 @@ def main(argv=None) -> int:
             print(f"Valid SCX: {result['cells']} cells, {result['features']} features")
         elif args.command == "from-h5ad":
             import anndata as ad
-            from .anndata import from_anndata
+            from .api import write_scx
             with resource(args.input):
                 adata = ad.read_h5ad(args.input)
-            from_anndata(adata, args.output, overwrite=args.overwrite)
+            write_scx(adata, args.output, overwrite=args.overwrite, analysis=args.analysis,
+                      counts=args.counts, normalized=None if args.normalized == "none" else args.normalized)
         else:
             from .anndata import to_anndata
             from .h5ad import write_h5ad

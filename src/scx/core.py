@@ -5,12 +5,15 @@ import gzip
 import csv
 from pathlib import Path, PurePosixPath
 import re
+from inspect import signature
 
 import pandas as pd
 import numpy as np
 from scipy import sparse
 from scipy.io import mmread, mmwrite
 from .errors import resource
+
+_MMREAD_OPTIONS = {"spmatrix": True} if "spmatrix" in signature(mmread).parameters else {}
 
 HEADER = ("path", "role", "name")
 VERSION = "0.1-alpha"
@@ -112,7 +115,7 @@ def _read_matrix(path):
         if len(header) != 5 or header[:3] != ["%%matrixmarket", "matrix", "coordinate"] or header[3] not in {"real", "integer"} or header[4] != "general":
             raise ValueError("matrix must use Matrix Market coordinate real/integer general")
         handle.seek(0)
-        matrix = sparse.csr_matrix(mmread(handle, spmatrix=True))
+        matrix = sparse.csr_matrix(mmread(handle, **_MMREAD_OPTIONS))
         # Readers can stop after declared entries. Consume the gzip trailer too
         # so truncated streams and CRC failures cannot validate successfully.
         while handle.read(1024 * 1024):

@@ -1,32 +1,33 @@
 # Seurat ↔ SCX without Python
 
-R adapter **scxSeurat 0.1.4 on main** performs export, validation, safe publication
+R adapter **scxSeurat 0.1.5** performs export, validation, safe publication
 and import entirely in R plus its registered native helpers. No Python process,
 reticulate, NumPy, pandas, SciPy or AnnData installation is required. Python is
 needed separately for AnnData/H5AD conversions.
 
 The published `v0.1.0-alpha.5` assets contain R 0.1.3 and retain their original
-Python requirement. This improvement is a new main-branch package version;
+Python requirement. Alpha.6 includes the R-only improvement;
 existing release assets and tags have not been replaced.
 
-## Install from this checkout
+## Install
 
-In R, from the repository root:
+In your existing R environment:
 
 ```r
-install.packages(c("SeuratObject", "jsonlite", "digest"),
-                 repos = "https://cloud.r-project.org")
-install.packages("adapters/seurat", repos = NULL, type = "source")
+source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.6/install.R")
 library(scxSeurat)
-packageVersion("scxSeurat")  # 0.1.4
+packageVersion("scxSeurat")  # 0.1.5
 ```
+
+See [installation and binary coverage](install.md). To build from a checkout, use
+`install.packages("adapters/seurat", repos=NULL, type="source")`.
 
 Matrix is a dependency of SeuratObject. Existing compatible R dependencies are
 reused. Source installation requires a C toolchain and zlib development files:
 Windows Rtools matching R (Rtools45 for R 4.5); Linux build tools and zlib headers;
 macOS command-line developer tools and zlib. Those tools build the R package;
 they are not Python dependencies. Windows R-only CI also creates an R 4.5 binary
-ZIP in its artifact, installable with `install.packages("scxSeurat_0.1.4.zip",
+ZIP in its artifact; the release uses a platform-labelled ZIP, installable with `install.packages("scxSeurat_0.1.5-windows-x86_64.zip",
 repos = NULL, type = "win.binary")` in a compatible Windows R environment.
 
 Use `library(scxSeurat)` after installation. Development `source("adapters/seurat/R/scx.R")`
@@ -36,19 +37,20 @@ copied R file cannot provide the operating-system rename and gzip guarantees.
 ## Export, validate and import
 
 ```r
-write_scx_seurat(object, "result.scx", assay = "RNA")
+write_scx(object, "result.scx", assay = "RNA")
 validate_scx("result.scx")  # cells, features, manifest file count
-restored <- read_scx_seurat("result.scx")
-legacy <- read_scx_seurat("result.scx", assay_class = "Assay")
+restored <- read_scx("result.scx")
+legacy <- read_scx("result.scx", assay_class = "Assay")
 # Deliberate whole-directory replacement:
-write_scx_seurat(object, "result.scx", overwrite = TRUE)
+write_scx(object, "result.scx", overwrite = TRUE)
 ```
 
 Both Assay5 and legacy Assay under SeuratObject >=5 are supported. Exact counts
-are required, normalized is optional, and metadata, embeddings and cell graphs
-are retained in the supported profile. Expression is CELL × FEATURE in SCX and
+are required, normalized is optional, and typed metadata are retained by default. Add `analysis=TRUE` for embeddings
+and cell graphs. Expression is CELL × FEATURE in SCX and
 transposed at the Seurat boundary. Cell graphs remain CELL × CELL.
-Existing calls with `python = ...` continue to work; that argument is ignored.
+Legacy `write_scx_seurat` / `read_scx_seurat` calls with `python = ...`
+continue to work; that argument is ignored.
 
 ## Validation and dtype scope
 

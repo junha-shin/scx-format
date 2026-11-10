@@ -1,13 +1,9 @@
-# Verify the alpha release
+# Verify alpha.6 packages
 
-The steps below are pinned to alpha.5 / R 0.1.3. Current main adds the
-[R-only 0.1.4 validation procedure](r-only.md); published alpha.5 assets are
-unchanged. Current CI also builds 0.1.4 and tests its native R-only paths.
-
-Tag **v0.1.0-alpha.5** maps to Python **0.1.0a5** and R **0.1.3**.
-Use the [unified installation guide](getting-started.md) to obtain the tagged
-checkout, install the released wheel and R source package, and select the same
-Python interpreter from R. No PyPI/CRAN publication is needed.
+Tag **v0.1.0-alpha.6** maps to Python **0.1.0a6** and R **0.1.5**.
+Follow [installation](install.md). R operates independently of Python; the
+bridge check below needs both because it tests both analysis environments.
+Alpha.5 remains available unchanged at its original tag.
 
 ## External-user checks
 
@@ -16,13 +12,13 @@ installing, comparing the computed digest with the entry for that exact name:
 
 ```sh
 # Linux
-sha256sum scx_format-0.1.0a5-py3-none-any.whl
+sha256sum scx_format-0.1.0a6-py3-none-any.whl
 # macOS
-shasum -a 256 scx_format-0.1.0a5-py3-none-any.whl
+shasum -a 256 scx_format-0.1.0a6-py3-none-any.whl
 ```
 
 ```powershell
-Get-FileHash scx_format-0.1.0a5-py3-none-any.whl -Algorithm SHA256
+Get-FileHash scx_format-0.1.0a6-py3-none-any.whl -Algorithm SHA256
 ```
 
 After installing, from the tagged checkout run:
@@ -64,7 +60,8 @@ other supported profiles, use their constraint files in **separate** Python
 environments. AnnData 0.11.4 has separate Python 3.10 and 3.12 constraints; the
 R bridge uses Python 3.12. See [compatibility](../compatibility/README.md).
 
-CI runs Python compatibility tests, three R bridge environments, Windows safety
+CI runs four Python compatibility profiles (including SciPy 1.11.4), two
+Python-free R jobs, three OS binary-distribution jobs, three R bridge environments, Windows safety
 tests and Python/R benchmark smoke tests. The newest AnnData R job additionally
 builds Python wheel/sdist and the R source package, installs the built packages,
 and runs the cross-language quickstart without sourcing adapter code.
@@ -85,9 +82,12 @@ Real-data validation and performance measurements are separate procedures:
 1. Finish changes on main and run the tests above. Update `CHANGELOG.md`, release
    notes and supported version mapping together. Use a clean checkout to avoid
    accidental development data in distributions.
-2. Build Python packages with `python -m pip install build` then
+2. Run `Rscript scripts/build_r_assets.R dist/r-assets` on each supported OS.
+   This builds the binary/source packages, checks SHA-256, installs to a fresh
+   library without adding dependencies, and runs the installed R-only round trip.
+   Build Python packages with `python -m pip install build` then
    `python -m build`. Build the R source with `R CMD build adapters/seurat` and
-   place the resulting `scxSeurat_0.1.3.tar.gz` in `dist/`.
+   place the resulting `scxSeurat_0.1.5.tar.gz` in `dist/`.
 3. In a fresh Python environment install the **wheel** plus the selected profile,
    and install the R tarball into a fresh R library. From outside the repository,
    verify that `scx.__file__` and `find.package('scxSeurat')` point to installed
@@ -96,9 +96,10 @@ Real-data validation and performance measurements are separate procedures:
 4. Record package SHA-256 hashes, full runtime dependency pins and quickstart reports. Do not include downloaded
    datasets or private absolute-path command logs in release assets.
 5. Commit and push; wait for all CI checks. Create the annotated
-   `v0.1.0-alpha.5` tag at the verified commit, push it and verify tag CI. Create a
+   `v0.1.0-alpha.6` tag at the verified commit, push it and verify tag CI. Create a
    GitHub **prerelease** using the checked-in notes, then upload wheel, Python
-   sdist, R source tarball, checksum list and sanitized verification report.
+   sdist, R source tarball, OS binaries, checksum list and sanitized verification report.
+   Merge hashes for all platform archives into the single release `SHA256SUMS`.
 6. Check that asset names, sizes and SHA-256 digests match local packages and
    that the release/tag points to the tested commit. Download and exercise the
    public assets as a final install check. Do not replace an already published
