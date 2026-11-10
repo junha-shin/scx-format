@@ -37,6 +37,10 @@ jobs:
           Rscript -e 'for (lib in .libPaths()) if (file.exists(file.path(lib,"scxSeurat","DESCRIPTION"))) remove.packages("scxSeurat",lib=lib)'
           SCX_REQUIRE_UNINSTALLED=1 Rscript scripts/check_standalone.R .compat-results/standalone-r .compat-results/standalone-python
       - run: python scripts/check_standalone_bridge.py .compat-results/standalone-r
+      - name: Smoke-test the reproducible TSV measurement and source comparator
+        run: |
+          pip install -r benchmarks/requirements.txt
+          python examples/tsv-pbmc3k/benchmark.py smoke --output .compat-results/tsv-benchmark
       - uses: actions/upload-artifact@v4
         with:
           name: standalone-${{ matrix.os }}
@@ -44,6 +48,8 @@ jobs:
             .compat-results/standalone-python/report.json
             .compat-results/standalone-r/report.json
             .compat-results/standalone-r/bridge-report.json
+            .compat-results/tsv-benchmark/run/report.json
+            .compat-results/tsv-benchmark/run/summary.md
   test:
     runs-on: ubuntu-latest
     strategy:
