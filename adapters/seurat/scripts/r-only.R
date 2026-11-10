@@ -12,6 +12,7 @@ trace(base::system, tracer = quote(stop("external process forbidden")), print = 
 trace(base::system2, tracer = quote(stop("external process forbidden")), print = FALSE)
 Sys.setenv(PATH = "", RETICULATE_PYTHON = "/nonexistent/python", PYTHON = "/nonexistent/python")
 stopifnot(identical(Sys.getenv("PATH"), ""))
+matrix_errors <- list()
 for (assay_class in c("Assay", "Assay5")) {
   counts <- Matrix(matrix(c(1, 0, 3, 0, 2, 4), 3, 2), sparse = TRUE)
   dimnames(counts) <- list(c("g1", "g2", "g3"), c("c1", "c2"))
@@ -34,12 +35,20 @@ for (assay_class in c("Assay", "Assay5")) {
   stopifnot(validate_scx(root)$cells == 2L)
   after <- read_scx(root, assay_class = assay_class)
   stopifnot(identical(before[[]], after[[]]), identical(before[["RNA"]][[]], after[["RNA"]][[]]))
-  for (layer in c("counts", "data")) stopifnot(max(abs(LayerData(before, layer = layer) - LayerData(after, layer = layer))) == 0)
+  errors <- vapply(c("counts", "data"), function(layer)
+    max(abs(LayerData(before, layer = layer) - LayerData(after, layer = layer))), numeric(1))
+  cat(assay_class, "matrix errors:", paste(names(errors), sprintf("%.17g", errors), collapse = "; "), "\n")
+  # Decimal real MTX parsing can differ by an ulp on platforms where R's
+  # long double has double precision (notably arm64 macOS). Counts stay exact.
+  stopifnot(errors[["counts"]] == 0,
+    errors[["data"]] <= 16 * .Machine$double.eps * max(1, max(abs(LayerData(before, layer = "data")))))
+  matrix_errors[[assay_class]] <- as.list(errors)
   stopifnot(max(abs(Embeddings(before[["pca"]]) - Embeddings(after[["pca"]]))) == 0)
   stopifnot(max(abs(before[["RNA_nn"]] - after[["RNA_nn"]])) == 0)
 }
 writeLines(jsonlite::toJSON(list(passed = TRUE, python_on_path = FALSE, external_process_calls = 0,
-  assays = c("Assay", "Assay5"), R = R.version.string, scxSeurat = as.character(packageVersion("scxSeurat"))),
+  assays = c("Assay", "Assay5"), max_absolute_errors = matrix_errors,
+  R = R.version.string, scxSeurat = as.character(packageVersion("scxSeurat"))),
   auto_unbox = TRUE), file.path(args[1], "report.json"))
 cat("R-only installed-package validation passed for Assay and Assay5\n")
 }
