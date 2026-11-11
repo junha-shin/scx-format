@@ -13,6 +13,13 @@ Normalized expression is float64 `log1p(counts / filtered-cell total * 10000)`.
 Both exporters receive this exact same expression-only SCX directory. This is
 an export/transport test, not a comparison of Scanpy and Seurat analysis methods.
 
+## Recorded real-data results
+
+[Measured results and interpretation](results.md) · [all observations and hashes](results.json).
+Counts and normalized matched exactly in both repeats, including all zeros and
+requested subset order. The results are local Windows measurements; CI smoke
+checks are separately described below.
+
 ## Reproduce
 
 From a checkout, use your existing AnnData/scverse and Seurat environments.

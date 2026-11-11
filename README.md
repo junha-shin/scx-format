@@ -52,6 +52,7 @@ protected. See [TSV export and memory limits](docs/tsv-export.md).
 - [Format](specification/SCX-v0.1.md) and [metadata schema](specification/metadata-schema-v1.md)
 - [Reproducible package verification](docs/release-verification.md)
 - [PBMC3k](examples/pbmc3k/README.md), [Seurat validation](examples/seurat/README.md), [benchmarks](benchmarks/README.md)
+- [PBMC3k R/Python TSV equivalence and performance](examples/tsv-pbmc3k/README.md)
 - [Changes](CHANGELOG.md) and [alpha.6 release notes](docs/releases/v0.1.0-alpha.6.md)
 
 One feature space / selected assay is supported. Extra assays, arbitrary analysis

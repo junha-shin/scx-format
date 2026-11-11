@@ -90,3 +90,6 @@ invalid inputs, exact wide Python integers, single-row densification, failed
 publication and cross-language TSV agreement. No-install checks run on Linux,
 Windows and macOS. Optional installed-package APIs receive the same addition on
 main; immutable alpha.6 packages do not yet expose `to_tsv`.
+
+For real-data equivalence checks and isolated-process time, memory and file-size
+measurements, see the [reproducible PBMC3k TSV example](../examples/tsv-pbmc3k/README.md).

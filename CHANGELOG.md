@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — PBMC3k TSV verification and measurements
+
+- Checksum-pinned 10x PBMC3k preparation and no-install R/Python TSV benchmark.
+- Counts/normalized, plain/gzip and ordered subsets checked against both the
+  source sparse matrix and the other language, one row at a time.
+- 24 isolated measured exports / 12 paired comparisons; all values and axes
+  matched, with maximum absolute error 0 in the recorded Windows run.
+- Recorded wall/API time, worker peak memory, output sizes, implementation/input
+  hashes, versions and reproducible methods; three-platform synthetic CI smoke.
+
+
 ## Unreleased — matrix TSV export
 
 - Shared no-install `to_tsv(path, output, matrix, cells, features)` API for Python
