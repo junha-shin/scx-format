@@ -195,7 +195,7 @@ def run(args):
                                '--output',str(output.resolve()),'--config',str(config.resolve()),'--metrics',str(metrics.resolve())]
                 else:
                     command = [args.rscript,'--vanilla',str(SCRIPT.with_name('worker.R')),
-                               str(ROOT/'standalone/scx.R'),str(args.input.resolve()),str(output.resolve()),str(config.resolve()),str(metrics.resolve())]
+                               str(args.r_script.resolve()),str(args.input.resolve()),str(output.resolve()),str(config.resolve()),str(metrics.resolve())]
                 wall, peak, tree_peak = execute(command,args.output/(stem+'.log'),env)
                 record = {'case':case['name'],'repeat':repeat,'engine':engine,'wall_seconds':wall,
                           **json.loads(metrics.read_text(encoding='utf-8')), 'peak_bytes':peak,
@@ -232,6 +232,7 @@ def run(args):
         'thread_limits':{'BLAS_OpenMP_requested':1,'SciPy_Matrix_Market':'automatic'},
         'input_files':{str(p.relative_to(args.input)).replace('\\','/'):{'bytes':p.stat().st_size,'sha256':digest(p)} for p in sorted(args.input.rglob('*')) if p.is_file()},
         'implementation_sha256':{p:digest(ROOT/p) for p in ['standalone/scx.py','standalone/scx.R','examples/tsv-pbmc3k/benchmark.py','examples/tsv-pbmc3k/worker.R']},
+        'R_export_sha256':digest(args.r_script),
         'cases':cases,'records':records,'summary':summary,'checks':checks}
     save(args.output/'report.json',report)
     lines = ['| Case | Engine | Wall s (median) | API s (median) | Peak MiB (max) | File MiB |',
@@ -269,6 +270,7 @@ def main():
             p.add_argument('--config',type=Path,required=True); p.add_argument('--metrics',type=Path,required=True)
         else:
             p.add_argument('--rscript',default='Rscript')
+            p.add_argument('--r-script',type=Path,default=ROOT/'standalone/scx.R',help='standalone R implementation to measure, e.g. a saved baseline')
             if name == 'run': p.add_argument('--repeats',type=int,default=2)
     args = parser.parse_args()
     if hasattr(args,'repeats') and args.repeats < 1: parser.error('--repeats must be positive')

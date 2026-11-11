@@ -44,6 +44,7 @@ to_tsv <- function(path, output, matrix="counts", cells=NULL, features=NULL) {
   entry <- data$manifest[data$manifest$role == matrix, , drop=FALSE]
   if (!nrow(entry)) stop("SCX has no normalized matrix")
   values <- data$matrices[[entry$path]]
+  data$matrices <- NULL
   rows <- .scx_tsv_select(data$cells, cells, "cells")
   columns <- .scx_tsv_select(data$features, features, "features")
   target <- .scx_output_path(target)
@@ -57,11 +58,23 @@ to_tsv <- function(path, output, matrix="counts", cells=NULL, features=NULL) {
   }, add=TRUE)
   con <- if (endsWith(target,".gz")) gzfile(stage,"wt",encoding="UTF-8") else file(stage,"wt",encoding="UTF-8")
   withCallingHandlers({
+    # CSR gives direct access to each row's stored entries. Keep the source
+    # sparse; the only full-width output buffer is a vector of text fields.
+    values <- methods::as(values,"RsparseMatrix")
+    column_map <- integer(ncol(values))
+    column_map[columns] <- seq_along(columns)
     writeLines(paste(.scx_tsv_field(c("cell_id",data$features[columns])), collapse="\t"), con, useBytes=TRUE)
     for (row in rows) {
-      # Only one selected row is ever dense. The full input stays sparse.
-      dense <- as.numeric(as.matrix(values[row,columns,drop=FALSE]))
-      writeLines(paste(c(.scx_tsv_field(data$cells[row]), sprintf("%.17g",dense)),collapse="\t"), con, useBytes=TRUE)
+      fields <- rep.int("0",length(columns))
+      from <- values@p[row]; to <- values@p[row+1]
+      if (from < to) {
+        entries <- seq.int(from+1L,to)
+        positions <- column_map[values@j[entries]+1L]
+        keep <- positions > 0L
+        # Include explicit stored zeros as well: sprintf retains signed zero.
+        fields[positions[keep]] <- sprintf("%.17g",values@x[entries[keep]])
+      }
+      writeLines(paste(c(.scx_tsv_field(data$cells[row]), fields),collapse="\t"), con, useBytes=TRUE)
     }
     close(con); con <- NULL
   }, warning=function(w) stop(conditionMessage(w),call.=FALSE))

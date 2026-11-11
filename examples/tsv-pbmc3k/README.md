@@ -85,7 +85,8 @@ maximum recorded peak across repeats; every observation remains in JSON.
   runtime/library versions affect results; two repeats are not a broad hardware
   or statistical performance qualification.
 
-The exporters keep input sparse and densify one output row. Full input
+The exporters keep input sparse and build one output row. Python densifies one
+row; optimized R formats stored CSR entries into a zero-filled text row. Full input
 validation still loads sparse resources; subset export therefore does not imply
 subset-sized input memory. R also uses scratch disk for CRC validation and
 stages/copies output. Full dense TSV writes zeros and can be much larger than
@@ -106,3 +107,23 @@ python -m pytest tests/test_tsv_benchmark.py
 Comparator unit tests reject matching-but-wrong values, reordered axes,
 truncation, extra rows and nonfinite values. Existing TSV, corruption, overwrite,
 limited-densification and adapter tests remain in CI.
+## Profiling and optimized-run comparison
+
+`profile.R` is a separate diagnostic run with Rprof and elapsed-time wrappers.
+It measures input validation, row extraction/densification, number formatting
+and writing, and saves top inclusive/self samples. Sampling/wrapper times are
+not additive and are not used as performance benchmark observations.
+
+```sh
+Rscript examples/tsv-pbmc3k/profile.R standalone/scx.R benchmarks/work/tsv-pbmc3k/input.scx benchmarks/work/profile.tsv benchmarks/work/profile
+python examples/tsv-pbmc3k/compare_optimization.py examples/tsv-pbmc3k/results.json benchmarks/work/optimized/report.json benchmarks/work/comparison.json
+```
+
+The run command accepts `--r-script /path/to/saved-baseline.R` to measure an
+immutable historical script without installing it. Save `standalone/scx.R` from
+commit `3fc185059fdef35f03da2acace95a250796c227f` for the pre-optimization version.
+Use new output paths for every diagnostic and benchmark run. The comparator
+refuses changed input hashes, axes/selections, methods, R versions/dependencies
+or gzip defaults, and checks uncompressed R TSV hashes against the baseline.
+Historical baseline and optimized measurements are separate sessions on the
+same machine; cache and background load are not reset or controlled.

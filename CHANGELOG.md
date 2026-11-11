@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — faster R matrix TSV rendering
+
+- Profiling identified repeated formatting of implicit zeros and sparse row
+  extraction as the main costs in the baseline R exporter.
+- Convert to CSR once and format only stored entries into a zero-filled text row;
+  keep explicit stored/signed zeros and the existing 17-digit numeric format.
+- No new packages or numeric dense matrices. Full validation, gzip CRC, output
+  protection, staging and verified exclusive publication remain unchanged.
+- Add sparse edge-case, no-densification and compatible-run comparison tests.
+
+
 ## Unreleased — PBMC3k TSV verification and measurements
 
 - Checksum-pinned 10x PBMC3k preparation and no-install R/Python TSV benchmark.

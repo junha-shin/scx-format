@@ -55,14 +55,18 @@ cell1   2     0
 
 The exporter never builds a dense CELL × FEATURE array or an AnnData/Seurat
 object. It validates all SCX resources, retains only the selected expression
-matrix, and converts **one selected output row at a time**. Other expression
-matrices and graphs are validated individually and discarded.
+matrix, and builds **one selected output row at a time**. Python densifies only
+that row. R converts to CSR and formats stored entries into a zero-filled text
+row, without a numeric dense matrix or dense row. Other expression matrices and
+graphs are validated individually and discarded.
 
 This is not out-of-core MTX parsing or a fixed RAM cap: sparse matrix input,
 metadata and validation still need memory. Peak memory can include the selected
 sparse matrix plus the largest other resource being validated. Row conversion
 and formatting use space proportional to selected feature count, not the total
-output cell × feature count. Subsets reduce output/dense-row size; they do not
+output cell × feature count. R CSR conversion can transiently hold both sparse
+layouts (O(nnz)); it does not change the bounded row-buffer contract. Subsets
+reduce output/row-buffer size; they do not
 avoid full SCX input validation. Existing R standalone gzip validation also
 uses scratch disk, as documented in [setup](install.md).
 
@@ -86,7 +90,7 @@ after the writer stops, rename the partial file and remove the identified lock,
 then retry to a new path. Existing files are never truncated or deleted.
 
 CI tests counts/normalized, subsets/order, gzip, Unicode/quoted IDs, missing and
-invalid inputs, exact wide Python integers, single-row densification, failed
+invalid inputs, exact wide Python integers, Python single-row densification, R no-dense sparse rendering, failed
 publication and cross-language TSV agreement. No-install checks run on Linux,
 Windows and macOS. Optional installed-package APIs receive the same addition on
 main; immutable alpha.6 packages do not yet expose `to_tsv`.

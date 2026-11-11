@@ -54,7 +54,7 @@ AnnData → SCX → Seurat import into the requested assay class. Small fixtures
 in CI; PBMC3k reports record the separate local real-data validation. CI uploads
 JUnit and per-environment JSON artifacts. Recorded success is evidence for the
 listed runs, not a performance or general biological correctness claim.
-The Python suite includes 115 cases per AnnData environment (two symlink cases
+The Python suite includes 120 cases per AnnData environment (two symlink cases
 may skip on Windows without link-creation privileges); R tests cover both assay
 classes plus native validation, corruption, rollback, races and hard interruption.
 Counts-only selection and dense/CSR/CSC
@@ -138,5 +138,5 @@ immutable inputs; each run copies them to a fresh output. Changing dependencies
 requires a new report and CI check before expanding this table's claims.
 
 `to_tsv` uses the same input validation/dtype rules and exports expression only.
-See [the TSV guide](../docs/tsv-export.md) for single-row densification, sparse
+See [the TSV guide](../docs/tsv-export.md) for Python single-row densification, R sparse text rows, sparse
 input memory, subset semantics and protected file publication.
