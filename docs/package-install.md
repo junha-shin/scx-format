@@ -7,7 +7,7 @@ Existing compatible dependencies are reused.
 ## Python / scverse
 
 ```sh
-pip install "https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.6/scx_format-0.1.0a6-py3-none-any.whl"
+pip install "https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx_format-0.1.0a7-py3-none-any.whl"
 ```
 
 Run this in your AnnData environment; notebooks can use `%pip install`.
@@ -18,7 +18,7 @@ Object/H5AD conversion needs AnnData >=0.11.4. If absent, install it with
 ## R / Seurat
 
 ```r
-source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.6/install.R")
+source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.7/install.R")
 library(scxSeurat)
 ```
 
@@ -43,7 +43,7 @@ For an explicit source build:
 
 ```r
 Sys.setenv(SCX_INSTALL_DEFINE_ONLY = "1")
-source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.6/install.R")
+source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.7/install.R")
 Sys.unsetenv("SCX_INSTALL_DEFINE_ONLY")
 install_scx(source = TRUE)
 ```
@@ -54,7 +54,7 @@ or command-line developer tools on macOS. Python is unnecessary.
 ## Offline and verification
 
 Download the wheel or matching R archive and `SHA256SUMS` from the
-[release](https://github.com/junha-shin/scx-format/releases/tag/v0.1.0-alpha.6).
+[release](https://github.com/junha-shin/scx-format/releases/tag/v0.1.0-alpha.7).
 Verify Python's checksum before installing the local wheel. For R, save
 `install.R` from the tag, define it as above, then call
 `install_scx(assets_dir="downloaded-assets", lib="your-library")`.
@@ -64,5 +64,5 @@ Check `scx.__version__` or `packageVersion("scxSeurat")`. See the
 [verification guide](release-verification.md) for an installed-package round trip.
 Every dataset read/write still performs full validation.
 
-These instructions describe the immutable alpha.6 packages. For no-install usage,
+These instructions describe the immutable alpha.7 packages. For no-install usage,
 use the [standalone scripts](install.md) from current main.

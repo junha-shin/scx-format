@@ -3,6 +3,8 @@
 Start with the [no-install files](install.md) in your existing environment.
 The Python examples assume the saved `scx.py` beside your notebook; R uses
 `source("scx.R")` on the saved R file.
+Download the **v0.1.0-alpha.7** files and verify SHA-256 first; see the
+[release-file checks](release-verification.md). Both expose `SCX_VERSION`.
 
 ## Seurat → SCX → AnnData
 

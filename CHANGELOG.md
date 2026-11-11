@@ -1,57 +1,32 @@
 # Changelog
 
-## Unreleased — faster R matrix TSV rendering
+## v0.1.0-alpha.7 — versioned no-install files
 
-- Profiling identified repeated formatting of implicit zeros and sparse row
-  extraction as the main costs in the baseline R exporter.
-- Convert to CSR once and format only stored entries into a zero-filled text row;
-  keep explicit stored/signed zeros and the existing 17-digit numeric format.
-- No new packages or numeric dense matrices. Full validation, gzip CRC, output
-  protection, staging and verified exclusive publication remain unchanged.
-- Add sparse edge-case, no-densification and compatible-run comparison tests.
-- PBMC3k full R exports measured 3.64–4.09× faster with 0 numeric error; plain
-  TSV hashes and all file sizes unchanged. Peak memory increased by 0.5–21.8 MiB
-  in these observations; complete before/after results and profiles are recorded.
+Standalone **v0.1.0-alpha.7**; optional Python **0.1.0a7** / R **0.1.6**.
+Format **0.1-alpha** and metadata schema **1.0** unchanged.
 
-
-## Unreleased — PBMC3k TSV verification and measurements
-
-- Checksum-pinned 10x PBMC3k preparation and no-install R/Python TSV benchmark.
-- Counts/normalized, plain/gzip and ordered subsets checked against both the
-  source sparse matrix and the other language, one row at a time.
-- 24 isolated measured exports / 12 paired comparisons; all values and axes
-  matched, with maximum absolute error 0 in the recorded Windows run.
-- Recorded wall/API time, worker peak memory, output sizes, implementation/input
-  hashes, versions and reproducible methods; three-platform synthetic CI smoke.
-
-
-## Unreleased — matrix TSV export
-
-- Shared no-install `to_tsv(path, output, matrix, cells, features)` API for Python
-  and R. Counts/normalized selection, ordered ID subsets, UTF-8 TSV and TSV.gz.
-- Full SCX validation retains only the selected expression matrix; output is
-  densified one row at a time. Sparse input/validation memory remains required.
-- Existing outputs and writes inside the SCX input are refused. Python uses
-  staged exclusive publication; pure R stages, exclusively creates, copies and
-  verifies bytes, retaining partial files/locks on publication failure.
-- Tests cover output values, ID ordering/quoting, gzip, invalid/corrupt inputs,
-  single-row memory behavior, failed copies and R/Python TSV agreement.
-
-## Unreleased — no-install scripts
-
-- Self-contained `standalone/scx.py` and `standalone/scx.R`, generated from the
-  reference adapters. Reuse existing Scanpy/Seurat dependencies; no SCX package
-  installation, SCX compiler, Python-from-R bridge or automatic dependency installs.
-- Same read/write API and basic/analysis profiles. Typed metadata and canonical
-  CELL × FEATURE axes remain validated. Python retains reference safe publication.
-- Pure R single-member gzip CRC/length checks using scratch disk, exclusive shared
-  locks, new-directory reservation, SHA-256 copy verification and manifest-last
-  publication. Existing outputs and overwrite=TRUE are refused in standalone R.
-- Installation-free usage is the documentation default. Alpha.6 installed packages
-  remain optional and unchanged, including native R replacement/rollback.
-- Three-platform no-SCX CI verifies Assay/Assay5, types, optional analysis, both
-  conversion directions, corrupt gzip and interrupted-copy rejection.
-
+- Primary release assets are self-contained `scx.py` and `scx.R`, canonical
+  UTF-8/LF, with SHA-256 checksums, offline `USAGE.md` and verification evidence.
+  Both expose `SCX_VERSION`; docs/downloads are pinned to this tag.
+- Existing Scanpy/Seurat dependencies are reused without automatic installation.
+  R scripts need no SCX package, Python, compiler or compiled SCX helper.
+- Unified read/write/validate APIs plus matrix `to_tsv`: counts/normalized,
+  ordered ID subsets, UTF-8 quoting, gzip and refusal of existing TSV files.
+- Pure R validates single-member gzip CRC/length using scratch disk. New SCX
+  outputs use shared exclusive locks, verified copies and manifest-last
+  publication. Existing SCX and `overwrite=TRUE` are refused in standalone R.
+  Optional native R packages retain stronger publication/replacement features.
+- R TSV rendering converts to CSR once and formats only stored entries into a
+  zero-filled text row. No numeric dense matrix or added package is needed.
+- Recorded PBMC3k optimization: full R outputs 3.64–4.09× faster in two local
+  repeats, 0 numeric error, identical plain TSV hashes and unchanged file sizes.
+  Observed peak memory increased by 0.5–21.8 MiB; complete profiles/tradeoffs
+  remain recorded rather than claiming memory savings.
+- Three-platform CI tests the staged release files with SCX absent, including
+  Assay/Assay5, both conversion directions, dtype/axes, corruption, interrupted
+  copies, sparse edge cases and TSV agreement. Checksum tampering fails.
+- Previous alpha.5/alpha.6 tags and assets remain unchanged. Numeric R dtype
+  limits, one feature space, optional analysis scope and filesystem limits apply.
 
 ## v0.1.0-alpha.6 — simpler installation and object I/O
 

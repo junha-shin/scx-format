@@ -92,8 +92,8 @@ then retry to a new path. Existing files are never truncated or deleted.
 CI tests counts/normalized, subsets/order, gzip, Unicode/quoted IDs, missing and
 invalid inputs, exact wide Python integers, Python single-row densification, R no-dense sparse rendering, failed
 publication and cross-language TSV agreement. No-install checks run on Linux,
-Windows and macOS. Optional installed-package APIs receive the same addition on
-main; immutable alpha.6 packages do not yet expose `to_tsv`.
+Windows and macOS. Alpha.7 standalone files and optional Python 0.1.0a7 / R 0.1.6 packages expose
+`to_tsv`. Earlier immutable alpha.6 packages do not.
 
 For real-data equivalence checks and isolated-process time, memory and file-size
 measurements, see the [reproducible PBMC3k TSV example](../examples/tsv-pbmc3k/README.md).

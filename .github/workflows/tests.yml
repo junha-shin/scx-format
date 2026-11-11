@@ -18,7 +18,8 @@ jobs:
       # Deliberately install only the analysis environment, never SCX.
       - run: pip install -r compatibility/anndata-0.13.4.txt
       - run: python scripts/build_standalone.py --check
-      - run: python scripts/check_standalone.py --require-uninstalled --output .compat-results/standalone-python
+      - run: python scripts/stage_standalone_release.py .compat-results/standalone-release
+      - run: python scripts/check_standalone.py --script .compat-results/standalone-release/scx.py --require-uninstalled --output .compat-results/standalone-python
       - if: runner.os == 'Linux'
         name: Use Ubuntu HTTPS archive
         run: |
@@ -35,8 +36,9 @@ jobs:
       - name: Remove any cached SCX package; forbid package loads and subprocesses
         run: |
           Rscript -e 'for (lib in .libPaths()) if (file.exists(file.path(lib,"scxSeurat","DESCRIPTION"))) remove.packages("scxSeurat",lib=lib)'
-          SCX_REQUIRE_UNINSTALLED=1 Rscript scripts/check_standalone.R .compat-results/standalone-r .compat-results/standalone-python
-      - run: python scripts/check_standalone_bridge.py .compat-results/standalone-r
+          SCX_REQUIRE_UNINSTALLED=1 SCX_SCRIPT=.compat-results/standalone-release/scx.R Rscript scripts/check_standalone.R .compat-results/standalone-r .compat-results/standalone-python
+      - run: python scripts/check_standalone_bridge.py .compat-results/standalone-r .compat-results/standalone-release/scx.py
+      - run: python scripts/stage_standalone_release.py .compat-results/standalone-release --verify
       - name: Smoke-test the reproducible TSV measurement and source comparator
         run: |
           pip install -r benchmarks/requirements.txt
@@ -46,6 +48,7 @@ jobs:
         with:
           name: standalone-${{ matrix.os }}
           path: |
+            .compat-results/standalone-release/*
             .compat-results/standalone-python/report.json
             .compat-results/standalone-r/report.json
             .compat-results/standalone-r/bridge-report.json
@@ -119,8 +122,8 @@ jobs:
           python -m build
           python -m pip install --force-reinstall --no-deps dist/*.whl
           R CMD build adapters/seurat
-          R CMD INSTALL scxSeurat_0.1.5.tar.gz
-          mv scxSeurat_0.1.5.tar.gz dist/
+          R CMD INSTALL scxSeurat_0.1.6.tar.gz
+          mv scxSeurat_0.1.6.tar.gz dist/
           python examples/quickstart/verify.py --output .compat-results/release-smoke
       - uses: actions/upload-artifact@v4
         if: matrix.anndata == '0.13.4'

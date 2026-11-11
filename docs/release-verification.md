@@ -1,106 +1,107 @@
-# Verify alpha.6 packages
+# Verify alpha.7 release files
 
-Tag **v0.1.0-alpha.6** maps to Python **0.1.0a6** and R **0.1.5**.
-Follow [installation](install.md). R operates independently of Python; the
-bridge check below needs both because it tests both analysis environments.
-Alpha.5 remains available unchanged at its original tag.
+Standalone release **v0.1.0-alpha.7**, optional Python **0.1.0a7** / R **0.1.6**.
+Format **0.1-alpha**, metadata schema **1.0**. Older tags/assets are unchanged.
+The default installation-free instructions are in [setup](install.md) and the
+downloadable [USAGE.md](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/USAGE.md).
 
-## External-user checks
+## Check downloaded bytes first
 
-The release includes `SHA256SUMS`. Verify downloaded package files before
-installing, comparing the computed digest with the entry for that exact name:
+Download `scx.py` or `scx.R` and `SHA256SUMS` from the
+[versioned release](https://github.com/junha-shin/scx-format/releases/tag/v0.1.0-alpha.7).
+Compute SHA-256 and compare with the entry for that exact filename:
 
 ```sh
-# Linux
-sha256sum scx_format-0.1.0a6-py3-none-any.whl
-# macOS
-shasum -a 256 scx_format-0.1.0a6-py3-none-any.whl
+sha256sum scx.py             # Linux
+shasum -a 256 scx.R          # macOS
 ```
 
 ```powershell
-Get-FileHash scx_format-0.1.0a6-py3-none-any.whl -Algorithm SHA256
+Get-FileHash .\scx.py -Algorithm SHA256
+Get-FileHash .\scx.R -Algorithm SHA256
 ```
 
-After installing, from the tagged checkout run:
+For an entire downloaded asset set, Linux `sha256sum -c SHA256SUMS` checks all
+listed files. Downloading optional packages is unnecessary for checking a single
+script; compare that file's line individually. A mismatch must be resolved before
+executing code. Assets use canonical UTF-8/LF; editing or converting newlines
+changes the checksum. Save the release file and checksum with the workflow.
 
-```sh
-python examples/quickstart/verify.py --python-only --output quickstart-output-python
-python examples/quickstart/verify.py --output quickstart-output-bridge
+After verification, import/source and check the release ID:
+
+```python
+import scx
+assert scx.SCX_VERSION == "v0.1.0-alpha.7"
 ```
 
-For a custom R installation append `--rscript "/path/to/Rscript"`. Both commands
-require fresh outputs. The first verifies Python only; the second verifies the
-installed R adapter and both cross-language directions. A successful run exits 0
-and writes `report.json` with `passed: true`, versions, shapes and numeric errors.
-`commands.json` records each public CLI/R subprocess and its output; it is written
-even when a later command fails. No success report is emitted for a failed run.
-Paths in command logs describe the local installation; inspect before sharing.
+```r
+source("scx.R")
+stopifnot(SCX_VERSION == "v0.1.0-alpha.7")
+```
 
-The tiny fixture is 3 cells × 4 features, with counts, log1p-normalized values,
-one embedding, an asymmetric cell graph and nullable/ordered metadata. It
-compares numeric values with tolerance 1e-12 and supported metadata exactly.
-It checks transport, not biological results. It also does not replace fault
-tests, compatibility tests or larger-data validation.
+This checks the loaded file version, not its integrity: hash checking comes
+first. Neither test installs SCX or missing dependencies.
 
-## Full repository tests
+## Repeat the staged-file tests
 
-In a dedicated development environment, choose one profile and run:
+From the tagged checkout in existing Python/R analysis environments, place the
+verified files in `downloaded/` and run the same no-install checks used by CI:
 
 ```sh
-python -m pip install -e ".[test]" -r compatibility/anndata-0.13.4.txt
+python scripts/check_standalone.py --script downloaded/scx.py --output .compat-results/public-python
+```
+
+Set `SCX_SCRIPT=downloaded/scx.R` in your shell, then:
+
+```sh
+Rscript scripts/check_standalone.R .compat-results/public-r .compat-results/public-python
+python scripts/check_standalone_bridge.py .compat-results/public-r downloaded/scx.py
+```
+
+For PowerShell, set the variable with `$env:SCX_SCRIPT="downloaded/scx.R"`.
+Outputs must be fresh directories. The tests forbid installed SCX imports/loads
+and R subprocesses, exercise Assay/Assay5, typed metadata, nonsquare axes,
+asymmetric graphs, basic/analysis profiles, TSV/gzip/subsets, sparse zero/extreme
+cases, checksum/corruption failures, overwrite protection and interrupted copies.
+JSON reports are emitted on success. `--require-uninstalled` on the Python test
+additionally proves the distribution is absent; normal users need not uninstall
+anything because imports of it are already blocked by the test.
+
+## Development and CI
+
+```sh
+python scripts/build_standalone.py --check
+python scripts/stage_standalone_release.py dist/standalone
+python scripts/stage_standalone_release.py dist/standalone --verify
 python -m pytest -q
 Rscript adapters/seurat/scripts/run-tests.R
-Rscript adapters/seurat/scripts/compat-fixtures.R .r-tests/release-fixtures
-python scripts/check_compatibility.py --fixtures .r-tests/release-fixtures --output .compat-results/release-bridge
 ```
 
-R tests require testthat, SeuratObject, Matrix and jsonlite; install the R adapter
-as described in the guide for the installed-package quickstart. To reproduce
-other supported profiles, use their constraint files in **separate** Python
-environments. AnnData 0.11.4 has separate Python 3.10 and 3.12 constraints; the
-R bridge uses Python 3.12. See [compatibility](../compatibility/README.md).
+Staging refuses an existing directory, checks package/release version agreement,
+normalizes generated scripts/guide to LF, and writes SHA-256 entries. Tampered,
+duplicate or unsafe entries fail validation. Three-platform CI stages these
+exact files, tests them with SCX absent, verifies hashes again and retains them
+with the reports. Main and tag CI must both pass before publishing.
 
-CI runs four Python compatibility profiles (including SciPy 1.11.4), two
-Python-free R jobs, three OS binary-distribution jobs, three R bridge environments, Windows safety
-tests and Python/R benchmark smoke tests. The newest AnnData R job additionally
-builds Python wheel/sdist and the R source package, installs the built packages,
-and runs the cross-language quickstart without sourcing adapter code.
-Reports and built packages are retained as CI artifacts. Tag pushes run the same
-checks. CI does not automatically publish to GitHub, PyPI or CRAN.
+Other CI jobs retain Python dependency profiles (including SciPy 1.11.4),
+Seurat bridges, native R-only checks, three-platform optional package builds and
+benchmark smoke tests. Optional packages use [their separate install guide](package-install.md).
+The installed-package quickstart is `python examples/quickstart/verify.py`;
+`--python-only` skips R. Real PBMC3k and scaling evidence remain separate recorded
+measurements with their own source hashes, not new timings for this release.
 
-Real-data validation and performance measurements are separate procedures:
+## Maintainer publication
 
-- [Scanpy PBMC3k](../examples/pbmc3k/README.md) and
-  [Seurat PBMC3k](../examples/seurat/README.md): pinned upstream checksums,
-  provenance, additional analysis dependencies and recorded comparisons.
-- [Scaling benchmarks](../benchmarks/README.md): workload, hardware/memory
-  methods, source versions and all measured results. Historical speed figures
-  predate the latest output-safety gates; they are not this release's timing.
-
-## Maintainer build and release procedure
-
-1. Finish changes on main and run the tests above. Update `CHANGELOG.md`, release
-   notes and supported version mapping together. Use a clean checkout to avoid
-   accidental development data in distributions.
-2. Run `Rscript scripts/build_r_assets.R dist/r-assets` on each supported OS.
-   This builds the binary/source packages, checks SHA-256, installs to a fresh
-   library without adding dependencies, and runs the installed R-only round trip.
-   Build Python packages with `python -m pip install build` then
-   `python -m build`. Build the R source with `R CMD build adapters/seurat` and
-   place the resulting `scxSeurat_0.1.5.tar.gz` in `dist/`.
-3. In a fresh Python environment install the **wheel** plus the selected profile,
-   and install the R tarball into a fresh R library. From outside the repository,
-   verify that `scx.__file__` and `find.package('scxSeurat')` point to installed
-   package libraries. Run the tagged-checkout quickstart using those environments.
-   Repeat the Python check with the sdist in a separate fresh environment.
-4. Record package SHA-256 hashes, full runtime dependency pins and quickstart reports. Do not include downloaded
-   datasets or private absolute-path command logs in release assets.
-5. Commit and push; wait for all CI checks. Create the annotated
-   `v0.1.0-alpha.6` tag at the verified commit, push it and verify tag CI. Create a
-   GitHub **prerelease** using the checked-in notes, then upload wheel, Python
-   sdist, R source tarball, OS binaries, checksum list and sanitized verification report.
-   Merge hashes for all platform archives into the single release `SHA256SUMS`.
-6. Check that asset names, sizes and SHA-256 digests match local packages and
-   that the release/tag points to the tested commit. Download and exercise the
-   public assets as a final install check. Do not replace an already published
-   package silently; use a new version for any correction.
+1. Update `release.json`, Python/R package versions, installer, changelog and
+   guides together. Regenerate the one-file scripts and run the tests.
+2. Commit/push; verify all main CI jobs. Tag that exact commit and verify tag CI.
+3. Use the canonical script artifact from Linux; check that staged script and
+   usage hashes agree across Linux/Windows/macOS. Compare to tagged raw files.
+4. Create a GitHub prerelease draft. Add scripts, USAGE, optional package assets,
+   one combined `SHA256SUMS` and a sanitized `verification.json` with source,
+   platform and main/tag CI evidence. Keep the no-install assets primary.
+5. Verify uploaded sizes/hashes and tag target before publication. Download the
+   public assets, verify hashes and repeat the no-install checks using those
+   downloaded files. Attach public-install validation evidence if separate.
+6. Do not replace published scripts, packages or tags. Any correction needs a
+   new version. No PyPI/CRAN publication is performed by this process.

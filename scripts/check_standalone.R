@@ -13,7 +13,8 @@ trace(base::loadNamespace, tracer = quote(if (identical(package, "scxSeurat")) s
 trace(base::system, tracer = quote(stop("subprocess forbidden")), print = FALSE)
 trace(base::system2, tracer = quote(stop("subprocess forbidden")), print = FALSE)
 Sys.setenv(PATH = "", PYTHON = "/nonexistent/python", RETICULATE_PYTHON = "/nonexistent/python")
-source("standalone/scx.R")
+source(Sys.getenv("SCX_SCRIPT",unset="standalone/scx.R"))
+stopifnot(identical(SCX_VERSION,jsonlite::fromJSON("release.json")$tag))
 stopifnot(!"scxSeurat" %in% loadedNamespaces(), !is.loaded("scx_check_gzip", PACKAGE="scxSeurat"))
 source("adapters/seurat/tests/testthat/helper-fixtures.R")
 fails <- function(code, pattern = NULL) {
@@ -160,6 +161,7 @@ zero_table <- read.delim(zero_out,check.names=FALSE,colClasses="character")
 stopifnot(identical(zero_table$cell_id,c("c2","c1")),identical(zero_table$g3,c("0","0")))
 stopifnot(!"scxSeurat" %in% loadedNamespaces())
 report <- list(passed=TRUE, installed_scx_loads=0, package_installations=0,
+  SCX_VERSION=SCX_VERSION,
   external_process_calls=0, assays=c("Assay","Assay5"), shape=c(2,3), typed_metadata=TRUE,
   overwrite_protection=TRUE, interrupted_copy_rejected=TRUE, gzip_crc_and_truncation_rejected=TRUE,
   TSV=TRUE, TSV_no_dense_matrix=TRUE, TSV_interrupted_copy_rejected=TRUE)

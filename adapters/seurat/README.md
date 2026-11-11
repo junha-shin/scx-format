@@ -4,7 +4,7 @@ Use one R file in your existing SeuratObject >=5 environment; no SCX package,
 compiler or Python is required:
 
 ```r
-source("https://raw.githubusercontent.com/junha-shin/scx-format/main/standalone/scx.R")
+source("scx.R")
 write_scx(pbmc, "pbmc.scx")
 restored <- read_scx("pbmc.scx")
 write_scx(pbmc, "analysis.scx", analysis = TRUE)

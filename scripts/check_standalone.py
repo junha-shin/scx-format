@@ -22,6 +22,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--require-uninstalled", action="store_true")
+    parser.add_argument("--script", type=Path, default=Path(__file__).resolve().parents[1]/'standalone/scx.py')
     args = parser.parse_args()
     if args.require_uninstalled:
         try:
@@ -32,10 +33,12 @@ def main():
             raise AssertionError("CI environment must not have scx-format installed")
     installed = sorted((d.metadata["Name"], d.version) for d in importlib.metadata.distributions())
     sys.meta_path.insert(0, NoInstalledSCX())
-    script = Path(__file__).resolve().parents[1] / "standalone/scx.py"
+    script = args.script.resolve()
     spec = importlib.util.spec_from_file_location("scx_script", script)
     scx = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(scx)
+    release = json.loads((Path(__file__).resolve().parents[1]/'release.json').read_text(encoding='utf-8'))
+    assert scx.SCX_VERSION == release['tag'] and scx.__version__ == release['python_version']
     import anndata as ad
     import numpy as np
     import pandas as pd
@@ -109,6 +112,7 @@ def main():
     assert "scx" not in sys.modules
     assert installed == sorted((d.metadata["Name"], d.version) for d in importlib.metadata.distributions())
     report = {"passed": True, "installed_scx_imports": 0, "package_installations": 0,
+              "SCX_VERSION": scx.SCX_VERSION,
               "shape": [3, 2], "typed_metadata": True, "analysis": True,
               "overwrite_protection": True, "corrupt_gzip_rejected": True, "CLI": True, "TSV": True}
     (out / "report.json").write_text(json.dumps(report, indent=2) + "\n")

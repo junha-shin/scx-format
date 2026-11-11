@@ -6,12 +6,13 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "standalone"))
+script = Path(sys.argv[2]).resolve() if len(sys.argv)>2 else ROOT/'standalone/scx.py'
+sys.path.insert(0, str(script.parent))
 import scx
 import numpy as np
 import pandas as pd
 
-assert Path(scx.__file__).resolve() == ROOT / "standalone/scx.py"
+assert Path(scx.__file__).resolve() == script
 folder = Path(sys.argv[1])
 for kind in ("Assay", "Assay5"):
     a = scx.read_scx(folder / f"{kind}-full.scx")

@@ -1,4 +1,9 @@
-# Use SCX without installation
+# Use SCX alpha.7 without installation
+
+Release-specific downloads: [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.py), [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.R),
+[SHA256SUMS](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/SHA256SUMS), [offline USAGE.md](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/USAGE.md).
+Check SHA-256 before executing; [verification instructions](release-verification.md).
+
 
 Use the Scanpy or Seurat environment you already have. No SCX package, compiler,
 Python-from-R bridge or dependency installer is used. Downloaded scripts are
@@ -6,7 +11,7 @@ SCX code, but they are ordinary files rather than installed packages.
 
 ## Python / Scanpy
 
-Save [scx.py](https://raw.githubusercontent.com/junha-shin/scx-format/main/standalone/scx.py)
+Save [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.py)
 next to your script or notebook. In that same environment:
 
 ```python
@@ -34,13 +39,15 @@ saved file in the notebook directory before importing it.
 
 ## R / Seurat
 
+Save the linked `scx.R` and verify it before sourcing:
+
 ```r
-source("https://raw.githubusercontent.com/junha-shin/scx-format/main/standalone/scx.R")
+source("scx.R")
 write_scx(seurat_object, "sample.scx")
 restored <- read_scx("sample.scx")
 ```
 
-For offline/repeated use, save [scx.R](https://raw.githubusercontent.com/junha-shin/scx-format/main/standalone/scx.R)
+For offline/repeated use, save [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.R)
 once and use `source("scx.R")`. No other repository files are needed. This uses
 SeuratObject >=5, Matrix, jsonlite and digest from the existing Seurat environment.
 If any are absent the script names them and stops; it never installs or upgrades
@@ -81,14 +88,17 @@ deleted. See also [safe I/O](safe-io.md).
 
 ## Reproducibility and optional packages
 
-The links above follow main. Save the file with your workflow; for an immutable
-copy, replace `main` in the URL with the full Git commit SHA you verified. Never
+The links above are pinned to v0.1.0-alpha.7. Save the file and its checksum
+with your workflow. Both scripts expose `SCX_VERSION` equal to that tag. Never
 silently refresh a script in a reproducible analysis. The two bundled scripts
-are generated from checked-in sources and CI rejects stale generated files.
+are generated from checked-in sources; CI tests canonical staged release files,
+checks version agreement, and rejects stale or modified bytes.
 
 Package installation is [optional](package-install.md): useful for an installed
 CLI, reusable imports, or R's faster native validator and staged replacement.
-The alpha.6 packages are unchanged and do not contain the standalone files.
+Alpha.7 includes optional Python 0.1.0a7 / R 0.1.6 packages. Their native R
+validator and replacement support are separate from the no-install files.
+Previous alpha.6 assets are unchanged.
 
 ## Ordinary TSV output
 
