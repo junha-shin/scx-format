@@ -6,6 +6,8 @@ from pathlib import Path
 
 def compare(before, after):
     for report in (before,after):
+        if not report['checks'] or not report['records'] or not report['summary']:
+            raise ValueError('Missing completed comparison/measurement records')
         if not report['passed'] or not all(x['passed'] for x in report['checks']):
             raise ValueError('Both runs must pass every source/language comparison')
         for check in report['checks']:

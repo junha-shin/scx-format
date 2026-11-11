@@ -13,7 +13,14 @@ Normalized expression is float64 `log1p(counts / filtered-cell total * 10000)`.
 Both exporters receive this exact same expression-only SCX directory. This is
 an export/transport test, not a comparison of Scanpy and Seurat analysis methods.
 
-## Recorded real-data results
+## Current R optimization
+
+[Before/after performance, memory and safety](optimization.md). Full R outputs
+are about 3.6–4.1× faster on this PBMC3k input; output values and sizes are
+unchanged. Small subset validation remains the time floor. The report includes
+the small observed peak-memory increases rather than claiming memory savings.
+
+## Recorded baseline real-data results
 
 [Measured results and interpretation](results.md) · [all observations and hashes](results.json).
 Counts and normalized matched exactly in both repeats, including all zeros and

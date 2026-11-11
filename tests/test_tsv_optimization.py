@@ -21,7 +21,7 @@ def test_same_input_comparison_and_ratio():
 
 
 @pytest.mark.parametrize('mutation,pattern',[
-    ('input','input_files'),('runtime','runtime'),('values','numeric error'),('bytes','bytes changed')])
+    ('input','input_files'),('runtime','runtime'),('values','numeric error'),('bytes','bytes changed'),('empty','comparison')])
 def test_incompatible_or_incorrect_runs_are_refused(mutation,pattern):
     before = json.loads((ROOT/'examples/tsv-pbmc3k/results.json').read_text(encoding='utf-8'))
     after = copy.deepcopy(before)
@@ -30,6 +30,7 @@ def test_incompatible_or_incorrect_runs_are_refused(mutation,pattern):
         for row in after['records']:
             if row['engine']=='R': row['R'] = 'different runtime'
     elif mutation=='values': after['checks'][0]['max_absolute_errors']['R_vs_source'] = 1
+    elif mutation=='empty': after['checks'] = []
     else:
         for row in after['records']:
             if row['engine']=='R' and row['case']=='counts-full-tsv': row['output_sha256'] = 'wrong'

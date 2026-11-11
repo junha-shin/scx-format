@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "same_input_files": true,
+  "same_R_environment_and_gzip": true,
+  "plain_R_TSV_bytes_identical": true,
+  "rows": [
+    {
+      "case": "counts-full-tsv",
+      "before_wall_seconds": 149.51566409994848,
+      "after_wall_seconds": 37.81642940011807,
+      "speedup": 3.953722402450869,
+      "before_peak_bytes": 471048192,
+      "after_peak_bytes": 489525248,
+      "before_output_bytes": 74455920,
+      "after_output_bytes": 74455920
+    },
+    {
+      "case": "counts-full-gzip",
+      "before_wall_seconds": 154.41110390005633,
+      "after_wall_seconds": 37.76530739990994,
+      "speedup": 4.088702423760082,
+      "before_peak_bytes": 436002816,
+      "after_peak_bytes": 444153856,
+      "before_output_bytes": 3982273,
+      "after_output_bytes": 3982273
+    },
+    {
+      "case": "counts-subset-gzip",
+      "before_wall_seconds": 19.38704105000943,
+      "after_wall_seconds": 20.117922599893063,
+      "speedup": 0.9636701281529177,
+      "before_peak_bytes": 407396352,
+      "after_peak_bytes": 430252032,
+      "before_output_bytes": 4278,
+      "after_output_bytes": 4278
+    },
+    {
+      "case": "normalized-full-tsv",
+      "before_wall_seconds": 152.86466050008312,
+      "after_wall_seconds": 39.3984341500327,
+      "speedup": 3.879967917454817,
+      "before_peak_bytes": 444063744,
+      "after_peak_bytes": 455274496,
+      "before_output_bytes": 112912499,
+      "after_output_bytes": 112912499
+    },
+    {
+      "case": "normalized-full-gzip",
+      "before_wall_seconds": 144.21147239999846,
+      "after_wall_seconds": 39.64545105001889,
+      "speedup": 3.6375288609543954,
+      "before_peak_bytes": 395153408,
+      "after_peak_bytes": 408080384,
+      "before_output_bytes": 5446911,
+      "after_output_bytes": 5446911
+    },
+    {
+      "case": "normalized-subset-gzip",
+      "before_wall_seconds": 20.581115149892867,
+      "after_wall_seconds": 20.57504765014164,
+      "speedup": 1.0002948960242717,
+      "before_peak_bytes": 395374592,
+      "after_peak_bytes": 395878400,
+      "before_output_bytes": 9025,
+      "after_output_bytes": 9025
+    }
+  ],
+  "baseline_repeats": 2,
+  "optimized_repeats": 2,
+  "note": "Historical baseline and a separate optimized session; OS cache was not reset. See runtime/source hashes in the original reports."
+}

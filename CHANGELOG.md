@@ -9,6 +9,9 @@
 - No new packages or numeric dense matrices. Full validation, gzip CRC, output
   protection, staging and verified exclusive publication remain unchanged.
 - Add sparse edge-case, no-densification and compatible-run comparison tests.
+- PBMC3k full R exports measured 3.64–4.09× faster with 0 numeric error; plain
+  TSV hashes and all file sizes unchanged. Peak memory increased by 0.5–21.8 MiB
+  in these observations; complete before/after results and profiles are recorded.
 
 
 ## Unreleased — PBMC3k TSV verification and measurements

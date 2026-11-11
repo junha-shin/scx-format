@@ -97,3 +97,6 @@ main; immutable alpha.6 packages do not yet expose `to_tsv`.
 
 For real-data equivalence checks and isolated-process time, memory and file-size
 measurements, see the [reproducible PBMC3k TSV example](../examples/tsv-pbmc3k/README.md).
+
+The [R optimization study](../examples/tsv-pbmc3k/optimization.md) records
+profiling, exact-value/byte checks, speedups and peak-memory tradeoffs on PBMC3k.

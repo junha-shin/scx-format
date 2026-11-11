@@ -1,4 +1,7 @@
-# Recorded PBMC3k TSV results
+# Recorded PBMC3k TSV results — pre-optimization baseline
+
+This historical baseline is retained unchanged in `results.json`. See the
+[current R optimization comparison](optimization.md) for the newer renderer.
 
 Measured on Windows x86_64 using the standalone scripts identified by SHA-256
 in [results.json](results.json). Input: **2,700 × 13,714**, 2,282,976 nonzero

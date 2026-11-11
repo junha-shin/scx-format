@@ -1,0 +1,57 @@
+{
+  "diagnostic_only": true,
+  "baseline_commit": "3fc185059fdef35f03da2acace95a250796c227f",
+  "optimized_code_commit": "15e226fe35f617bdc9d778aa42f4de8d80dd1b9b",
+  "R_before_sha256": "3a8d9e63223456d3f25e8aa11030fe58e5597bd40bcca62f98e6889b90d9fd97",
+  "R_after_sha256": "90af1d62a7f618e50cd2b97c15a8494df83befc681b7893f47131ad6dd07d62a",
+  "profiler_sha256": "f70bf4fc28354591a8aff6a21574c6550ff438e6136ec91506afb449ec99b1e8",
+  "input_files": {
+    "cells.tsv.gz": {
+      "bytes": 11430,
+      "sha256": "898d45798d630df1740737e4e5cb1c4fe5dafc4b0ec7ded490db462ce6a76bda"
+    },
+    "features.tsv.gz": {
+      "bytes": 115406,
+      "sha256": "7302e08b3f02eb6f5db7e6e6c72b06bbf02fbcd2541db0d99bd49bb955a39824"
+    },
+    "manifest.tsv": {
+      "bytes": 236,
+      "sha256": "0aa130f1d677d09788ab15d4f005e8c1b1576d35400a745d634ed922323a3e8c"
+    },
+    "matrices/counts.mtx.gz": {
+      "bytes": 8293315,
+      "sha256": "3301f92ecef21ce8a6bf7af6fb9426ba00276bfd32bc22ad2cd85e6b56caea73"
+    },
+    "matrices/normalized.mtx.gz": {
+      "bytes": 8900496,
+      "sha256": "de225a864bf48aac615c30964747547264893e5583ad2676ae903ea5201a5fef"
+    },
+    "metadata.schema.json": {
+      "bytes": 237,
+      "sha256": "59b1721fa32049b6b34ddc43bda28e494248e946412e73a775aad32e87da1244"
+    }
+  },
+  "before": {
+    "diagnostic_only": true,
+    "API_seconds": 140.9,
+    "instrumented_seconds": {
+      "row_extract_and_dense": 21.710000000001372,
+      "validation": 15.76,
+      "write_lines": 5.46000000000069,
+      "number_format": 91.56999999999417
+    },
+    "note": "Diagnostic wrappers/Rprof add overhead. Inclusive samples and wrapper timings are not additive. Row extraction is forced inside as.matrix; number-format arguments are forced before its timer."
+  },
+  "after": {
+    "diagnostic_only": true,
+    "API_seconds": 33.730000000000004,
+    "instrumented_seconds": {
+      "row_extract_and_dense": 0,
+      "validation": 16,
+      "write_lines": 5.039999999999914,
+      "number_format": 6.149999999999771
+    },
+    "note": "Diagnostic wrappers/Rprof add overhead. Inclusive samples and wrapper timings are not additive. Row extraction is forced inside as.matrix; number-format arguments are forced before its timer."
+  },
+  "method": "Full counts TSV; Rprof 10ms and elapsed wrappers. Diagnostic overhead; sampling and inclusive timings are not additive. CSR row access is in the remaining total, not the old as.matrix timer."
+}

@@ -41,6 +41,7 @@ jobs:
         run: |
           pip install -r benchmarks/requirements.txt
           python examples/tsv-pbmc3k/benchmark.py smoke --output .compat-results/tsv-benchmark
+          python examples/tsv-pbmc3k/compare_optimization.py .compat-results/tsv-benchmark/run/report.json .compat-results/tsv-benchmark/run/report.json .compat-results/tsv-benchmark/run/self-comparison.json
       - uses: actions/upload-artifact@v4
         with:
           name: standalone-${{ matrix.os }}
@@ -50,6 +51,7 @@ jobs:
             .compat-results/standalone-r/bridge-report.json
             .compat-results/tsv-benchmark/run/report.json
             .compat-results/tsv-benchmark/run/summary.md
+            .compat-results/tsv-benchmark/run/self-comparison.json
   test:
     runs-on: ubuntu-latest
     strategy:
