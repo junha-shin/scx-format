@@ -3,6 +3,20 @@
 Move one scRNA-seq assay between Seurat and AnnData using an inspectable directory.
 Expression matrices always use **CELL × FEATURE** orientation.
 
+## Start here: a five-minute lesson
+
+**No SCX package installation.** Use your existing analysis environment:
+
+| Environment | Open and run | What you will see |
+|---|---|---|
+| Python / Scanpy | [quickstart.ipynb](tutorials/quickstart.ipynb) — download, choose your analysis kernel, Restart & Run All | Executed tables and checks beside each step |
+| R / Seurat | [quickstart.R](tutorials/quickstart.R) — open in RStudio and run numbered sections, or source the file | The same data and checks; no Python or IRkernel |
+
+Both lessons verify pinned alpha.7 downloads, generate a tiny example, write/read
+SCX, check typed metadata, export TSV/gzip and ordered subsets, and demonstrate
+overwrite protection. Each full rerun creates fresh outputs and preserves old
+runs. [Download instructions, expected results and recovery](tutorials/README.md).
+
 ## Use v0.1.0-alpha.7 in your existing environment
 
 Download [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.py) or [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.R)

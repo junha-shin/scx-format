@@ -1,5 +1,8 @@
 # Read, write and convert
 
+First time? Follow the [five-minute Python notebook or RStudio lesson](../tutorials/README.md)
+with generated data and expected results. This page is the recipe reference.
+
 Start with the [no-install files](install.md) in your existing environment.
 The Python examples assume the saved `scx.py` beside your notebook; R uses
 `source("scx.R")` on the saved R file.

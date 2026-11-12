@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — guided tutorials
+
+- Executed Python notebook and sectioned RStudio script use the same tiny data
+  and pinned alpha.7 files, with verified downloads and no SCX installation.
+- Walk through typed metadata, SCX round-trip, counts/normalized TSV, ordered
+  subsets, overwrite refusal and an optional own-data example.
+- Test both lessons on three operating systems, including offline full reruns,
+  preservation of earlier output, damaged-cache refusal and R/Python TSV equality.
+  Published alpha.7 assets and tags are unchanged.
+
 ## v0.1.0-alpha.7 — versioned no-install files
 
 Standalone **v0.1.0-alpha.7**; optional Python **0.1.0a7** / R **0.1.6**.

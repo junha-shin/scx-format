@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "cross_language_TSV_equal": true,
+  "python": {
+    "passed": true,
+    "SCX_VERSION": "v0.1.0-alpha.7",
+    "shape": [
+      3,
+      4
+    ],
+    "counts_equal": true,
+    "normalized_max_absolute_error": 0.0,
+    "typed_metadata_equal": true,
+    "TSV_equal": true,
+    "subset_order_equal": true,
+    "existing_output_preserved": true,
+    "offline_rerun": true,
+    "prior_outputs_preserved": true,
+    "damaged_cache_rejected": true
+  },
+  "R": {
+    "passed": true,
+    "SCX_VERSION": "v0.1.0-alpha.7",
+    "shape": [
+      3,
+      4
+    ],
+    "counts_equal": true,
+    "normalized_max_absolute_error": 0,
+    "typed_metadata_equal": true,
+    "TSV_equal": true,
+    "subset_order_equal": true,
+    "existing_output_preserved": true,
+    "offline_rerun": true,
+    "prior_outputs_preserved": true,
+    "damaged_cache_rejected": true
+  }
+}
