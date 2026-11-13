@@ -1,35 +1,27 @@
 # SCX - Single Cell eXchange
 
-Move one scRNA-seq assay between Seurat and AnnData using an inspectable directory.
-Expression matrices always use **CELL x FEATURE** orientation.
+Move single-cell data between Seurat and AnnData.
+SCX stores each expression matrix as **cells x features**.
 
-## Start with PBMC3k
+## Try PBMC3k
 
-**No SCX package installation.** Use your existing analysis environment:
+Use your existing Scanpy or Seurat environment. No SCX package install is needed.
 
-| Environment | Open and run | What you will see |
-|---|---|---|
-| Python / Scanpy | [quickstart.ipynb](tutorials/quickstart.ipynb) - open in your Scanpy/AnnData kernel | Save/read SCX and export TSV |
-| R / Seurat | [quickstart.md](tutorials/quickstart.md) - read code and actual results | Save/read SCX and export TSV; no Python needed |
+- [Python notebook](tutorials/quickstart.ipynb)
+- [R guide with results](tutorials/quickstart.md) | [R script](tutorials/quickstart.R)
 
-The quickstarts reuse downloaded PBMC3k data or download it once, show matrix
-shapes, write/read SCX, and preview a 5 x 5 TSV. R also includes an
-[R Markdown source](tutorials/quickstart.Rmd) and [script](tutorials/quickstart.R).
-[Detailed lessons](tutorials/README.md#detailed-walkthrough) cover verified downloads,
-metadata, additional options and recovery.
+The examples reuse local PBMC3k data or download it once.
+They save and read 2700 cells x 32738 genes, then show a 5 x 5 TSV table.
 
-## Use v0.1.0 in your existing environment
+## Use your own data
 
-Download [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py) or [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R)
-and [SHA256SUMS](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/SHA256SUMS). Verify the file's checksum before import/source.
-[Offline usage guide](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/USAGE.md) | [release notes](docs/releases/v0.1.0.md).
-These URLs are pinned to this release; previous alpha assets are unchanged.
+Download [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py)
+or [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R)
+into your working folder.
+Check the file against [SHA256SUMS](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/SHA256SUMS)
+before you load it. See [setup and requirements](docs/install.md).
 
-## Read and write
-
-**No SCX package installation is needed.** Save the single
-[Python file](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py)
-next to your notebook/script:
+Python:
 
 ```python
 import scx
@@ -37,7 +29,7 @@ scx.write_scx(adata, "sample.scx")
 restored = scx.read_scx("sample.scx")
 ```
 
-Save the matching [R file](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R), then in your existing Seurat environment:
+R:
 
 ```r
 source("scx.R")
@@ -45,40 +37,39 @@ write_scx(seurat_object, "sample.scx")
 restored <- read_scx("sample.scx")
 ```
 
-Downloaded files work offline. They reuse existing analysis dependencies and
-never install packages. R does not need Python or an SCX compiler.
-See [no-install setup, dependencies and limits](docs/install.md) and [first-use help](docs/first-use.md).
+Python reads counts from `layers['counts']` and normalized values from `X`.
+R reads `counts` and `data` from the selected assay.
+Counts are required. [Choose another source or export counts only](docs/first-use.md).
 
-The default preserves **counts, optional normalized expression, and typed
-cell/feature metadata**. Python uses `layers['counts']` and `X`; R uses the
-selected assay's `counts` and `data`. Counts are required and never inferred.
-Add `analysis=True` (R: `analysis=TRUE`) to write embeddings and cell graphs.
-Reads restore supported resources present in the input. Omissions produce a warning.
+## What SCX keeps
 
-Read and write validate automatically. Existing destinations are protected.
-**Standalone R only writes new directories**; it verifies staged files and
-publishes the manifest last. Python retains staged replacement via
-`overwrite=True`. The [optional R package](docs/package-install.md) provides
-native validation and replacement with rollback. See [safety differences and
-recovery](docs/install.md#shared-default-and-safety).
+- Counts and optional normalized values.
+- Cell and feature metadata, including supported data types and missing values.
+- Embeddings and cell graphs when you set `analysis=True` (R: `analysis=TRUE`).
 
-To inspect expression as an ordinary dense TSV, use the same API in both
-languages: `to_tsv(path, output, matrix="counts", cells=..., features=...)`
-(Python: `scx.to_tsv`). `.tsv.gz`, normalized expression and ID-ordered subsets
-are supported. Output buffers are limited to one row; R renders directly from
-sparse rows, and Python densifies only one row. Existing files are always protected. See [TSV export and memory limits](docs/tsv-export.md).
+SCX supports one assay. Other assays, loadings, spatial data, multiome data,
+and other analysis objects are outside its scope. Keep your original object.
 
-- [Usage and Seurat <-> AnnData examples](docs/getting-started.md)
-- [Support, dtype limits and errors](compatibility/README.md)
-- [Format](specification/SCX-v0.1.md) and [metadata schema](specification/metadata-schema-v1.md)
-- [Reproducible release-file verification](docs/release-verification.md)
-- [PBMC3k](examples/pbmc3k/README.md), [Seurat validation](examples/seurat/README.md), [benchmarks](benchmarks/README.md)
-- [PBMC3k R/Python TSV equivalence and performance](examples/tsv-pbmc3k/README.md)
-- [Changes](CHANGELOG.md) and [0.1.0 release notes](docs/releases/v0.1.0.md)
+## Export TSV
 
-One feature space / selected assay is supported. Extra assays, arbitrary analysis
-internals, loadings, spatial and multiome data remain outside the profile.
-Keep the original analysis object.
+Use `scx.to_tsv("sample.scx", "counts.tsv")` in Python,
+or `to_tsv("sample.scx", "counts.tsv")` in R.
+You can also export `.tsv.gz` or select cells and genes.
+[See TSV options and memory needs](docs/tsv-export.md).
+
+## Save safely
+
+SCX checks data when it reads and writes. Existing outputs are protected.
+The R file writes only to new folders.
+[See overwrite options and recovery](docs/safe-io.md).
+
+## More help
+
+- [Common errors](docs/first-use.md) | [Detailed examples](tutorials/README.md#detailed-walkthrough)
+- [Supported versions and limits](compatibility/README.md)
+- [Format](specification/SCX-v0.1.md) | [Metadata types](specification/metadata-schema-v1.md)
+- [Tests with real data](examples/pbmc3k/README.md) | [R tests](examples/seurat/README.md) | [Speed and memory](benchmarks/README.md)
+- [Release checks](docs/release-verification.md) | [Changes](CHANGELOG.md)
 
 ## Development
 
@@ -87,9 +78,6 @@ pip install -e '.[test]'
 pytest
 ```
 
-Run `python scripts/build_standalone.py` after changing adapter sources;
-`--check` verifies the generated one-file scripts. CI tests standalone Python/R
-without installed SCX on Linux, Windows and macOS, including both conversion
-directions. See the [R package development guide](docs/r-only.md). Legacy adapters
-`from_anndata` / `to_anndata` and `write_scx_seurat` / `read_scx_seurat`
-remain available with their original defaults.
+After changing the adapters, run `python scripts/build_standalone.py`.
+CI tests Python and R on Linux, Windows and macOS without installing SCX.
+See the [R development guide](docs/r-only.md).

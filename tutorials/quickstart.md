@@ -1,15 +1,13 @@
 # SCX quickstart with PBMC3k (R)
 
-Use your existing Seurat environment. This lesson loads real PBMC3k raw counts,
-saves and reads SCX, and previews a small TSV. No SCX package, Python or extra
-notebook packages are needed to run the code. The rendered Markdown includes
-actual output; this Rmd can also be knitted if you already use R Markdown.
+Use your existing Seurat environment. Load PBMC3k, save and read SCX,
+then view a small TSV table. No SCX package or Python is needed.
+This page shows real output. You can also [run the R script](quickstart.R).
 
 ## 1. Load SCX and PBMC3k
 
-Reuse the repository's downloaded data when present. Otherwise download the
-10x archive (about 8 MB) once. Run from the repository root, tutorials/, or a
-folder of your choice.
+Use local PBMC3k files if they are present. Otherwise, download the
+10x file once (about 8 MB). Run from the repo root, tutorials/, or your own folder.
 
 ```r
 if (!file.exists("scx.R"))
@@ -49,11 +47,11 @@ Input (features x cells): 32738 2700
 6 ENSG00000237683   AL627309.1
 ```
 
-## 2. Save SCX and read it back
+## 2. Save and read SCX
 
-Seurat holds FEATURE x CELL; SCX handles the transpose to CELL x FEATURE.
-These are raw counts, so normalized=NULL. A full rerun creates a fresh folder
-and keeps previous outputs.
+Seurat uses features x cells. SCX stores cells x features.
+This dataset has counts only, so use `normalized=NULL`.
+Each full run makes a new output folder and keeps earlier results.
 
 ```r
 run <- tempfile("scx-pbmc3k-", tmpdir=".")
@@ -70,10 +68,10 @@ Restored Seurat (features x cells): 32738 2700
 SCX orientation (cells x features): 2700 32738 
 ```
 
-## 3. Preview an expression TSV
+## 3. View a small TSV table
 
-Select five cells and the five genes with the largest total counts. Only this
-small preview is dense; the complete expression matrix remains sparse.
+Pick five cells and the five genes with the highest total counts.
+Only the small TSV table is dense. The full matrix stays sparse.
 
 ```r
 features <- rownames(counts)[order(Matrix::rowSums(counts), decreasing=TRUE)[1:5]]
@@ -100,13 +98,17 @@ AAACCGTGCTTCCG-1              22              15
 AAACCGTGTATGCG-1               8               4
 ```
 
-Expected: Seurat 32738 x 2700, SCX 2700 x 32738, preview 5 x 5.
-For your own data, replace section 1 with your existing Seurat object. Default
-export uses counts/data in the active assay; normalized=NULL is for counts only.
-Keep your original analysis object.
+Expected sizes: Seurat **32738 x 2700**, SCX **2700 x 32738**, TSV **5 x 5**.
 
-[Python notebook](quickstart.ipynb) | [Runnable R script](quickstart.R) |
+For your own data, replace step 1 with your Seurat object.
+The default uses counts/data in the selected assay.
+Use `normalized=NULL` for counts only. Keep your original object.
+
+To repeat a write step, make a new output folder in step 2 first.
+Existing output files are protected.
+
+[Python notebook](quickstart.ipynb) | [R script](quickstart.R) |
 [Detailed options](detailed.R) | [Common errors](../docs/first-use.md)
 
-Data: 10x PBMC3k ([provenance](../examples/seurat/README.md)); upstream dataset
-terms apply. [R Markdown source](quickstart.Rmd).
+Data: [10x PBMC3k](../examples/seurat/README.md). The dataset has its own terms of use.
+[R Markdown source](quickstart.Rmd).
