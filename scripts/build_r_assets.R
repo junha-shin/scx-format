@@ -9,7 +9,7 @@ run <- function(arguments) {
   if (status != 0L) stop("R package build/install failed")
 }
 run(c("CMD", "build", "adapters/seurat"))
-source <- "scxSeurat_0.1.6.tar.gz"
+source <- paste0("scxSeurat_", read.dcf("adapters/seurat/DESCRIPTION")[1,"Version"], ".tar.gz")
 before <- list.files(pattern = "^scxSeurat_.*\\.(zip|tgz|tar\\.gz)$")
 run(c("CMD", "INSTALL", "--build", source))
 binary <- setdiff(list.files(pattern = "^scxSeurat_.*\\.(zip|tgz|tar\\.gz)$"), before)

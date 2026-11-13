@@ -1,17 +1,17 @@
-# User entry point: source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.7/install.R")
+# User entry point: source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0/install.R")
 # Define-only mode is for offline tests/builds, not needed by users.
 .scx_binary_asset <- function(system = Sys.info()[["sysname"]], arch = R.version$arch,
                                r_minor = paste(R.version$major, strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1], sep = "."),
                                os_release = if (file.exists("/etc/os-release")) readLines("/etc/os-release", warn = FALSE) else character()) {
   if (r_minor != "4.5") return(NULL)
   arch <- if (arch %in% c("aarch64", "arm64")) "arm64" else arch
-  if (system == "Windows" && arch == "x86_64") return("scxSeurat_0.1.6-windows-x86_64.zip")
+  if (system == "Windows" && arch == "x86_64") return("scxSeurat_0.1.7-windows-x86_64.zip")
   if (system == "Darwin" && arch %in% c("arm64", "x86_64"))
-    return(paste0("scxSeurat_0.1.6-macos-", arch, ".tgz"))
+    return(paste0("scxSeurat_0.1.7-macos-", arch, ".tgz"))
   if (system == "Linux" && arch == "x86_64" && any(grepl('^ID="?ubuntu"?$', os_release))) {
     number <- sub('^VERSION_ID="?([^" ]+)"?$', "\\1", grep("^VERSION_ID=", os_release, value = TRUE))
     if (length(number) == 1L && !is.na(suppressWarnings(as.numeric(number))) && as.numeric(number) >= 22.04)
-      return("scxSeurat_0.1.6-ubuntu22-x86_64.tar.gz")
+      return("scxSeurat_0.1.7-ubuntu22-x86_64.tar.gz")
   }
   NULL
 }
@@ -29,7 +29,7 @@ install_scx <- function(lib = NULL, source = FALSE,
                         repos = "https://cloud.r-project.org", assets_dir = NULL) {
   if ("scxSeurat" %in% loadedNamespaces()) stop("Restart R before installing or updating scxSeurat")
   if (!is.logical(source) || length(source) != 1L || is.na(source)) stop("source must be TRUE or FALSE")
-  asset <- if (source) "scxSeurat_0.1.6.tar.gz" else .scx_binary_asset()
+  asset <- if (source) "scxSeurat_0.1.7.tar.gz" else .scx_binary_asset()
   if (is.null(asset)) stop("No binary for this R/OS combination. With R build tools and zlib installed, call install_scx(source=TRUE). See docs/install.md")
   if (is.null(lib)) {
     user <- strsplit(Sys.getenv("R_LIBS_USER"), .Platform$path.sep, fixed = TRUE)[[1]]
@@ -51,7 +51,7 @@ install_scx <- function(lib = NULL, source = FALSE,
   obtain <- function(name) {
     destination <- file.path(temp, name)
     if (is.null(assets_dir)) {
-      utils::download.file(paste0("https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/", name),
+      utils::download.file(paste0("https://github.com/junha-shin/scx-format/releases/download/v0.1.0/", name),
                            destination, mode = "wb", quiet = TRUE)
     } else {
       if (!file.copy(file.path(assets_dir, name), destination)) stop("Missing local asset: ", name)
@@ -66,13 +66,13 @@ install_scx <- function(lib = NULL, source = FALSE,
   # R's binary installer derives the package directory from the archive name.
   # Keep platform labels in release assets, but use the standard name locally.
   extension <- if (endsWith(asset, ".zip")) ".zip" else if (endsWith(asset, ".tgz")) ".tgz" else ".tar.gz"
-  install_path <- file.path(temp, paste0("scxSeurat_0.1.6", extension))
+  install_path <- file.path(temp, paste0("scxSeurat_0.1.7", extension))
   if (!identical(path, install_path) && !file.rename(path, install_path)) stop("Cannot prepare verified package for installation")
   type <- if (source || Sys.info()[["sysname"]] == "Linux") "source" else if (.Platform$OS.type == "windows") "win.binary" else "mac.binary"
   utils::install.packages(install_path, lib = lib, repos = NULL, type = type)
   description <- file.path(lib, "scxSeurat", "DESCRIPTION")
-  if (!file.exists(description) || read.dcf(description)[1, "Version"] != "0.1.6") stop("scxSeurat installation did not complete")
-  message("Installed scxSeurat 0.1.6. Next: library(scxSeurat)")
+  if (!file.exists(description) || read.dcf(description)[1, "Version"] != "0.1.7") stop("scxSeurat installation did not complete")
+  message("Installed scxSeurat 0.1.7. Next: library(scxSeurat)")
   invisible(list(library = lib, asset = asset, dependencies_installed = missing))
 }
 
