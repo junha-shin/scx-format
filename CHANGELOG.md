@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased - PBMC3k quickstarts
+
+- Python quickstart now loads real PBMC3k, reusing repository data or downloading
+  once, shows input/restored shapes, and displays a small expression TSV.
+- R walkthrough is published as executed Markdown plus Rmd source and script;
+  reading or running it requires no notebook rendering packages.
+- CI checks complete sparse counts, cell/feature order and identical R/Python
+  5 x 5 previews on the real input. Stable release assets are unchanged.
+
 ## v0.1.0 - first stable utilities
 
 - Existing-object quickstarts replace synthetic data setup with four API calls.

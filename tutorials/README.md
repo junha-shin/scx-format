@@ -1,15 +1,39 @@
-# Quickstart
+# Quickstart with PBMC3k
 
-Use your existing adata or Seurat object in your existing analysis environment.
-Download [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py)
-or [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R)
-into the current working folder. No SCX installation is needed.
+- [Python notebook](quickstart.ipynb): code, shapes, and actual table outputs.
+- [R walkthrough](quickstart.md): rendered Markdown with code and actual outputs.
+  [R Markdown source](quickstart.Rmd) and [plain R script](quickstart.R) are also available.
 
-- [Python notebook](quickstart.ipynb): raw counts in adata.layers['counts'], normalized values in X.
-- [R script](quickstart.R): your Seurat object, counts/data in the active assay.
+Use your existing Scanpy/AnnData or Seurat environment. Run from the repository
+root, tutorials/, or any working folder. The lesson downloads scx.py or scx.R
+only when absent; no SCX package installation is needed. Existing local files
+are reused, so use the published stable file when starting in a new folder.
 
-Run the four calls to load SCX, save, read, and export TSV. Pick fresh output
-names for each run. [Counts choices and common errors](../docs/first-use.md).
+Python reuses examples/pbmc3k/data/pbmc3k_raw.h5ad; R reuses
+examples/seurat/data/hg19 or the previously downloaded pbmc3k.tar.gz archive.
+Raw data are ignored by Git and are not shipped in the repository. In a fresh
+checkout, each lesson downloads its input once (about 6 MB Python, 8 MB R).
+The download/cache steps are part of the runnable example.
+
+Both lessons write/read all 2700 cells x 32738 genes and display the dimensions.
+R's in-memory Seurat matrix is 32738 features x 2700 cells; SCX uses cells x
+features. A 5-cell x 5-gene TSV preview uses the genes with the highest totals,
+so only a tiny table is converted to dense form. Counts are raw; this transport
+lesson does not perform normalization or a biological analysis.
+
+Every full run creates a fresh scx-pbmc3k-* output folder. Rerunning only a
+write block refuses an existing output; rerun the folder-creation block for a
+new destination. Keep original analysis objects. To use your own data, replace
+the loading section with your existing adata or Seurat object.
+
+R Markdown rendering is optional: the published .md already contains results.
+You can run the script or copy the R blocks without installing knitr, rmarkdown,
+Jupyter or Python. CI renders the Markdown directly from the executed Rmd code
+blocks using base R and the existing SCX dependencies.
+
+[Counts choices and common errors](../docs/first-use.md).
+Dataset provenance: [Python](../examples/pbmc3k/README.md),
+[R](../examples/seurat/README.md). Upstream dataset terms apply.
 
 ## Detailed walkthrough
 
@@ -136,7 +160,7 @@ python scripts/check_tutorials.py --output .compat-results/tutorials
 ```
 
 These are development-only execution tools, not SCX dependencies. Use a **new**
-output path each time. The runner also executes both minimal quickstarts and checks their round-trip, TSV values and overwrite protection. It uses a private kernel configuration and executes
+output path each time. The runner also executes both PBMC3k quickstarts and checks full sparse counts, axis order, dataset hashes, and cross-language TSV preview values. It uses a private kernel configuration and executes
 both lessons twice, forbids network on the second run, checks prior outputs and
 damaged-cache rejection, and compares actual R/Python TSV values and ID order.
 Reports and the executed notebook are saved under the output path. CI repeats

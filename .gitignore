@@ -35,3 +35,12 @@ adapters/seurat/src/*.so
 scxSeurat_*.tar.gz
 scxSeurat_*.zip
 scxSeurat_*.tgz
+
+# Local quickstart downloads and outputs
+scx-pbmc3k-*/
+pbmc3k_raw.h5ad
+pbmc3k.tar.gz
+/pbmc3k/
+/tutorials/pbmc3k/
+/scx.py
+/scx.R

@@ -59,6 +59,7 @@ jobs:
             .compat-results/standalone-r/bridge-report.json
             .compat-results/tutorials/report.json
             .compat-results/tutorials/*executed.ipynb
+            .compat-results/tutorials/quickstart-rendered.md
             .compat-results/tutorials/r-console.txt
             .compat-results/tsv-benchmark/run/report.json
             .compat-results/tsv-benchmark/run/summary.md

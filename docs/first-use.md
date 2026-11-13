@@ -1,9 +1,10 @@
 # First use in your existing environment
 
 Download scx.py or scx.R from the v0.1.0 release into your working directory.
-Use your existing adata or Seurat object; no SCX package installation is needed.
-The [Python notebook](../tutorials/quickstart.ipynb) and [R script](../tutorials/quickstart.R)
-show the four essential calls. The detailed lessons retain their pinned alpha.7
+The quickstarts load PBMC3k (reusing local data when present); substitute your
+own adata or Seurat object after trying the lesson. No SCX installation is needed.
+The [Python notebook](../tutorials/quickstart.ipynb) and [R walkthrough](../tutorials/quickstart.md)
+show input/restored shapes, save/read calls, and a small TSV preview. The detailed lessons retain their pinned alpha.7
 examples for reproducibility.
 
 | Environment | Existing dependencies | Tested scope |
@@ -43,9 +44,9 @@ layers must be joined explicitly when appropriate for the analysis.
 CI installs only the analysis dependencies, never SCX, for standalone jobs.
 It checks Assay/Assay5 and Python/R conversions on three operating systems;
 installed SCX imports and R subprocess calls are forbidden in standalone checks.
-The quickstart runner prepares existing objects outside the public lesson,
-executes the exact lesson, checks numeric round-trip and TSV values, and tests
-missing counts, absent input and existing output. No dependency is installed by
+The quickstart runner executes the exact PBMC3k lessons, checks complete sparse
+counts and axes, verifies dataset hashes, and compares the R/Python TSV preview.
+Standalone and core tests cover missing inputs and output protection. No dependency is installed by
 any lesson or converter. Detailed lessons additionally test metadata, offline
 reruns, corruption checks and ordered subsets.
 

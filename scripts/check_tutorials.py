@@ -132,95 +132,81 @@ jsonlite::write_json(report,args[2],auto_unbox=TRUE,pretty=TRUE)
 
 
 def quick_lessons(output: Path, rscript: str):
+    """Run the actual PBMC3k lessons, preserving notebook/Markdown output."""
     import shutil
+    import re
+    import hashlib
     import pandas as pd
     for language, filename in (("python", "scx.py"), ("r", "scx.R")):
         work = output / ("quick-" + language)
         work.mkdir()
         shutil.copyfile(ROOT / "standalone" / filename, work / filename)
-    work = output / "quick-python"
+    # Reuse previously downloaded real data, without committing raw datasets.
+    for source, destination in (
+        (ROOT / "examples/pbmc3k/data/pbmc3k_raw.h5ad", output / "quick-python/pbmc3k_raw.h5ad"),
+        (ROOT / "examples/seurat/data/pbmc3k.tar.gz", output / "quick-r/pbmc3k.tar.gz"),
+    ):
+        if source.exists():
+            shutil.copyfile(source, destination)
     notebook = nbformat.read(ROOT / "tutorials/quickstart.ipynb", as_version=4)
     nbformat.validate(notebook)
-    notebook.cells.insert(0, nbformat.v4.new_code_cell("""
-import anndata as ad
-import numpy as np
-from scipy import sparse
-counts = sparse.csr_matrix([[1,0,3],[0,2,1]])
-adata = ad.AnnData(X=np.log1p(counts.astype(float)))
-adata.layers['counts'] = counts
-"""))
     notebook.cells.append(nbformat.v4.new_code_cell("""
-from pathlib import Path
-import hashlib
-assert Path(scx.__file__).resolve() == Path('scx.py').resolve()
-np.testing.assert_array_equal(restored.layers['counts'].toarray(), counts.toarray())
-np.testing.assert_allclose(restored.X.toarray(), adata.X.toarray(), rtol=0, atol=1e-12)
-missing = adata.copy()
-del missing.layers['counts']
-try:
-    scx.write_scx(missing, 'missing-counts.scx')
-except ValueError as error:
-    assert 'counts' in str(error) and 'normalized=None' in str(error)
-else:
-    raise AssertionError('Missing counts accepted')
-assert not Path('missing-counts.scx').exists()
-try:
-    scx.read_scx('absent.scx')
-except (OSError, ValueError):
-    pass
-else:
-    raise AssertionError('Missing input accepted')
-original = hashlib.sha256(Path('counts.tsv').read_bytes()).hexdigest()
-try:
-    scx.to_tsv('sample.scx', 'counts.tsv')
-except FileExistsError:
-    pass
-else:
-    raise AssertionError('Expected overwrite refusal')
-assert hashlib.sha256(Path('counts.tsv').read_bytes()).hexdigest() == original
+assert adata.shape == restored.shape == (2700, 32738)
+assert (restored.layers['counts'] != adata.X).nnz == 0
+assert restored.obs_names.tolist() == adata.obs_names.tolist()
+assert restored.var_names.tolist() == adata.var_names.tolist()
+np.testing.assert_array_equal(preview.values, adata[:5, features].X.toarray())
+assert preview.index.tolist() == adata.obs_names[:5].tolist()
+assert preview.columns.tolist() == features
+assert not (run / 'unexpected.tsv').exists()
 """))
-    NotebookClient(notebook, timeout=180, kernel_name="scx-tutorial-test",
-                   resources={"metadata": {"path": str(work)}}).execute()
+    NotebookClient(notebook, timeout=300, kernel_name="scx-tutorial-test",
+                   resources={"metadata": {"path": str(output / "quick-python")}}).execute()
     notebook.cells.pop()
-    notebook.cells.pop(0)
     for cell in notebook.cells:
         cell.metadata.pop("execution", None)
     nbformat.write(notebook, output / "quickstart-executed.ipynb")
+    rmd = (ROOT / "tutorials/quickstart.Rmd").read_text(encoding="utf-8")
+    blocks = re.findall(r"```\{r[^\n]*\}\n(.*?)```", rmd, re.S)
+    assert blocks
+    script = "# PBMC3k quickstart. Notebook-style walkthrough: quickstart.md\n\n" + "\n\n".join(blocks)
+    assert (ROOT / "tutorials/quickstart.R").read_text(encoding="utf-8") == script
     wrapper = output / "check-quick.R"
-    wrapper.write_text('''args <- commandArgs(TRUE)
-source("scx.R")
-counts <- Matrix::Matrix(matrix(c(1,0,3,0,2,1),nrow=3),sparse=TRUE)
-dimnames(counts) <- list(c("gene1","gene2","gene3"),c("cell1","cell2"))
-object <- SeuratObject::CreateSeuratObject(counts=counts)
-SeuratObject::LayerData(object,layer="data") <- log1p(counts)
-source(args[1])
-stopifnot(max(abs(SeuratObject::LayerData(restored,layer="counts")-counts))==0,
-  max(abs(SeuratObject::LayerData(restored,layer="data")-log1p(counts)))<=1e-12)
-bad <- object
-SeuratObject::DefaultAssay(bad) <- "RNA"
-SeuratObject::LayerData(bad,layer="counts") <- NULL
-missing <- tryCatch({write_scx(bad,"missing-counts.scx");NULL},error=conditionMessage)
-stopifnot(!is.null(missing),grepl("counts",missing),!dir.exists("missing-counts.scx"))
-absent <- tryCatch({read_scx("absent.scx");NULL},error=conditionMessage)
-stopifnot(!is.null(absent))
-previous <- digest::digest("counts.tsv",file=TRUE,algo="sha256")
-refusal <- tryCatch({to_tsv("sample.scx","counts.tsv");NULL},error=conditionMessage)
-stopifnot(!is.null(refusal),grepl("already exists",refusal,fixed=TRUE),
-  previous==digest::digest("counts.tsv",file=TRUE,algo="sha256"))
-''', encoding="utf-8")
-    result = subprocess.run([rscript, "--vanilla", str(wrapper), str(ROOT / "tutorials/quickstart.R")],
-                            cwd=output / "quick-r", capture_output=True, text=True,
-                            encoding="utf-8", errors="replace")
+    lines = ['results <- list()', 'env <- new.env(parent=.GlobalEnv)']
+    for i, block in enumerate(blocks, 1):
+        lines.append(f'results[[{i}]] <- capture.output(eval(parse(text={json.dumps(block)}),envir=env))')
+    lines.extend([
+        'stopifnot(all(dim(env$restored)==c(32738,2700)))',
+        'stopifnot(max(abs(SeuratObject::LayerData(env$restored,layer="counts")-env$counts))==0)',
+        'stopifnot(identical(colnames(env$restored),colnames(env$counts)),identical(rownames(env$restored),rownames(env$counts)))',
+        'stopifnot(max(abs(as.matrix(env$preview)-as.matrix(Matrix::t(env$counts[env$features,head(env$cells,5),drop=FALSE]))))==0)',
+        'jsonlite::write_json(results,"../quick-r-output.json",auto_unbox=FALSE)',
+    ])
+    wrapper.write_text("\n".join(lines)+"\n", encoding="utf-8")
+    result = subprocess.run([rscript, "--vanilla", str(wrapper)], cwd=output / "quick-r",
+                            capture_output=True, text=True, encoding="utf-8", errors="replace")
     (output / "quick-r-console.txt").write_text(result.stdout + result.stderr, encoding="utf-8")
     if result.returncode:
         raise RuntimeError(result.stdout + result.stderr)
-    expected = [[1, 0, 3], [0, 2, 1]]
-    for language in ("python", "r"):
-        table = pd.read_csv(output / ("quick-" + language) / "counts.tsv", sep="\t", index_col=0)
-        assert table.values.tolist() == expected
-    return {"passed": True, "counts_and_normalized_roundtrip": True,
-            "TSV_values_equal": True, "overwrite_protection": True,
-            "missing_counts_rejected": True, "missing_input_rejected": True,
+    results = iter(json.loads((output / "quick-r-output.json").read_text(encoding="utf-8")))
+    def rendered(match):
+        return "```r\n" + match.group(1) + "```\n\n```text\n" + "\n".join(next(results)) + "\n```"
+    markdown = re.sub(r"```\{r[^\n]*\}\n(.*?)```", rendered, rmd, flags=re.S)
+    markdown = re.sub(r"\A---\n.*?\n---\n", "# SCX quickstart with PBMC3k (R)\n", markdown, count=1, flags=re.S)
+    (output / "quickstart-rendered.md").write_text(markdown, encoding="utf-8")
+    p_run = next((output / "quick-python").glob("scx-pbmc3k-*"))
+    r_run = next((output / "quick-r").glob("scx-pbmc3k-*"))
+    p_table = pd.read_csv(p_run / "preview.tsv", sep="\t", index_col=0)
+    r_table = pd.read_csv(r_run / "preview.tsv", sep="\t", index_col=0)
+    pd.testing.assert_frame_equal(p_table, r_table, check_dtype=False, check_exact=True)
+    for path, expected in (
+        (output / "quick-python/pbmc3k_raw.h5ad", "89a96f1beaa2dd83a687666d3f19a4513ac27a2a2d12581fcd77afed7ea653a1"),
+        (output / "quick-r/pbmc3k.tar.gz", "847d6ebd9a1ec9a768f2be7e40ca42cbfe75ebeb6d76a4c24167041699dc28b5"),
+    ):
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == expected
+    return {"passed": True, "dataset": "PBMC3k raw counts", "shape": [2700,32738],
+            "preview_shape": list(p_table.shape), "full_counts_equal": True,
+            "axis_order_equal": True, "cross_language_preview_equal": True,
             "SCX_VERSION": json.loads((ROOT / "release.json").read_text(encoding="utf-8"))["tag"]}
 
 

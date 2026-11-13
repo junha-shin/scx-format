@@ -3,16 +3,18 @@
 Move one scRNA-seq assay between Seurat and AnnData using an inspectable directory.
 Expression matrices always use **CELL x FEATURE** orientation.
 
-## Start with your existing object
+## Start with PBMC3k
 
 **No SCX package installation.** Use your existing analysis environment:
 
 | Environment | Open and run | What you will see |
 |---|---|---|
-| Python / Scanpy | [quickstart.ipynb](tutorials/quickstart.ipynb) - use the kernel containing your adata object | Save/read SCX and export TSV |
-| R / Seurat | [quickstart.R](tutorials/quickstart.R) - use your existing Seurat object in RStudio | Save/read SCX and export TSV; no Python needed |
+| Python / Scanpy | [quickstart.ipynb](tutorials/quickstart.ipynb) - open in your Scanpy/AnnData kernel | Save/read SCX and export TSV |
+| R / Seurat | [quickstart.md](tutorials/quickstart.md) - read code and actual results | Save/read SCX and export TSV; no Python needed |
 
-The quickstarts use your existing adata or Seurat object directly.
+The quickstarts reuse downloaded PBMC3k data or download it once, show matrix
+shapes, write/read SCX, and preview a 5 x 5 TSV. R also includes an
+[R Markdown source](tutorials/quickstart.Rmd) and [script](tutorials/quickstart.R).
 [Detailed lessons](tutorials/README.md#detailed-walkthrough) cover verified downloads,
 metadata, additional options and recovery.
 

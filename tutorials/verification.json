@@ -37,11 +37,18 @@
   },
   "quickstart": {
     "passed": true,
-    "counts_and_normalized_roundtrip": true,
-    "TSV_values_equal": true,
-    "overwrite_protection": true,
-    "SCX_VERSION": "v0.1.0",
-    "missing_counts_rejected": true,
-    "missing_input_rejected": true
+    "dataset": "PBMC3k raw counts",
+    "shape": [
+      2700,
+      32738
+    ],
+    "preview_shape": [
+      5,
+      5
+    ],
+    "full_counts_equal": true,
+    "axis_order_equal": true,
+    "cross_language_preview_equal": true,
+    "SCX_VERSION": "v0.1.0"
   }
 }
