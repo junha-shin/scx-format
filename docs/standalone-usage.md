@@ -1,6 +1,6 @@
-# SCX v0.1.0-alpha.7 — no-install files
+# SCX v0.1.0 — no-install files
 
-Release: https://github.com/junha-shin/scx-format/releases/tag/v0.1.0-alpha.7
+Release: https://github.com/junha-shin/scx-format/releases/tag/v0.1.0
 
 Download only the language file you need (`scx.py` or `scx.R`) and `SHA256SUMS`.
 Use the Scanpy/Seurat environment you already have. No SCX installation,
@@ -34,7 +34,7 @@ Save `scx.py` beside your notebook/script:
 
 ```python
 import scx
-assert scx.SCX_VERSION == "v0.1.0-alpha.7"
+assert scx.SCX_VERSION == "v0.1.0"
 scx.write_scx(adata, "sample.scx")
 restored = scx.read_scx("sample.scx")
 scx.to_tsv("sample.scx", "counts.tsv.gz")
@@ -60,7 +60,7 @@ Save `scx.R`, then:
 
 ```r
 source("scx.R")
-stopifnot(SCX_VERSION == "v0.1.0-alpha.7")
+stopifnot(SCX_VERSION == "v0.1.0")
 write_scx(seurat_object, "sample.scx")
 restored <- read_scx("sample.scx")
 to_tsv("sample.scx", "counts.tsv.gz")
@@ -101,14 +101,14 @@ Use a UTF-8 R locale for non-ASCII IDs.
 
 Optional installed packages in this release are for users who prefer them;
 they are not required for these examples. Script release version is
-`SCX_VERSION`; optional package versions are Python 0.1.0a7 / R 0.1.6.
+`SCX_VERSION`; optional package versions are Python 0.1.0 / R 0.1.7.
 Format remains 0.1-alpha and metadata schema 1.0.
 
 Pinned files:
 
-- https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.py
-- https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.R
-- https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/SHA256SUMS
+- https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py
+- https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R
+- https://github.com/junha-shin/scx-format/releases/download/v0.1.0/SHA256SUMS
 
 Tagged documentation:
-https://github.com/junha-shin/scx-format/blob/v0.1.0-alpha.7/docs/release-verification.md
+https://github.com/junha-shin/scx-format/blob/v0.1.0/docs/release-verification.md

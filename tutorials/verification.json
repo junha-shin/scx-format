@@ -39,6 +39,9 @@
     "passed": true,
     "counts_and_normalized_roundtrip": true,
     "TSV_values_equal": true,
-    "overwrite_protection": true
+    "overwrite_protection": true,
+    "SCX_VERSION": "v0.1.0",
+    "missing_counts_rejected": true,
+    "missing_input_rejected": true
   }
 }

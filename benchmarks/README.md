@@ -11,12 +11,12 @@ are recorded in the reports (Python 0.1.0a4, R adapter 0.1.2).
 
 | Case | Before | After | Tradeoff / scope |
 |---|---:|---:|---|
-| Python H5AD → SCX, 50k cells | 80.08 s | 32.68 s | 2.45× observed speedup; SCX output grows 3.9% |
-| Python SCX → H5AD, 50k | 20.65 s | 10.67 s | 1.94× observed speedup; peak memory essentially unchanged |
+| Python H5AD -> SCX, 50k cells | 80.08 s | 32.68 s | 2.45x observed speedup; SCX output grows 3.9% |
+| Python SCX -> H5AD, 50k | 20.65 s | 10.67 s | 1.94x observed speedup; peak memory essentially unchanged |
 | Python standalone validation peak, 50k | 338.61 MiB | 227.77 MiB | 32.7% lower OS process peak |
-| R Seurat → SCX, 10k | 35.24 s / 1196.10 MiB | 19.52 s / 476.93 MiB | 1.80× observed speedup / 60.1% lower sampled peak |
-| R Seurat → SCX, 50k | not completed | 87.61 s / 971.04 MiB | Old quadratic graph check was stopped; no baseline speedup is claimed |
-| R SCX → Seurat, 50k | not completed | 33.00 s / 800.44 MiB | Improved sparse path completed and round-trip checks passed |
+| R Seurat -> SCX, 10k | 35.24 s / 1196.10 MiB | 19.52 s / 476.93 MiB | 1.80x observed speedup / 60.1% lower sampled peak |
+| R Seurat -> SCX, 50k | not completed | 87.61 s / 971.04 MiB | Old quadratic graph check was stopped; no baseline speedup is claimed |
+| R SCX -> Seurat, 50k | not completed | 33.00 s / 800.44 MiB | Improved sparse path completed and round-trip checks passed |
 
 Memory figures are defined below. Gains are not uniform: the small Python
 validation case did not speed up, Python export/import peaks barely changed,
@@ -28,7 +28,7 @@ from one machine, not universal speed or capacity guarantees.
 
 - Sizes: 1,000, 10,000 and 50,000 cells; 2,000 features; 100 random count draws
   per cell. Duplicate positions are summed, giving about 98 stored features per
-  cell (~5% density). Seed 42. No dense CELL × FEATURE allocation is used by the
+  cell (~5% density). Seed 42. No dense CELL x FEATURE allocation is used by the
   generators. This synthetic scaling workload is not a biological analysis.
 - Counts + log1p-normalized expression, 30D PCA-shaped and 2D UMAP-shaped random
   embeddings, a directed 15-neighbor sparse graph, numeric/nullable boolean and
@@ -74,8 +74,8 @@ from one machine, not universal speed or capacity guarantees.
 ## Changes supported by measurements
 
 1. A validated import now checks and retains resources in one pass. At 10k cells,
-   the separate [profile](results/profile.json) shows matrix reads **6 → 3**, TSV
-   reads **12 → 4**, and typed metadata decodes **4 → 2**. There is no global cache,
+   the separate [profile](results/profile.json) shows matrix reads **6 -> 3**, TSV
+   reads **12 -> 4**, and typed metadata decodes **4 -> 2**. There is no global cache,
    stale-file shortcut or skipped validation.
 2. Standalone validation releases each matrix before opening the next, instead
    of retaining counts/previous layers through the whole validation loop.
@@ -83,7 +83,7 @@ from one machine, not universal speed or capacity guarantees.
    Python gzip defaults change from level 9 to 6. At 50k, SCX grows from 62.00 to
    64.42 MiB; restored H5AD remains 136.19 MiB. This is a measured CPU/storage tradeoff.
 4. R sparse finite/nonnegative checks inspect stored values. The old graph check
-   could allocate a dense-sized CELL × CELL logical intermediate. At 50k its
+   could allocate a dense-sized CELL x CELL logical intermediate. At 50k its
    logical payload alone is about 10 GB, before other temporaries. The preliminary
    baseline run was stopped before completion of that case; the retained baseline
    R report is a clean rerun at 1k/10k only. No OOM result or 50k baseline metric

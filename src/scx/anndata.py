@@ -24,15 +24,15 @@ def from_anndata(adata, root: str | Path, *, overwrite=False, counts="counts",
 def _from_anndata(adata, root: str | Path, *, counts="counts", normalized="X",
                   analysis=True, warn_scope=True) -> None:
     root = Path(root)
-    def expression(name):
+    def expression(name, role):
         if name == "X":
             value = adata.X
         elif isinstance(name, str) and name in adata.layers:
             value = adata.layers[name]
         else:
-            raise ValueError(f"AnnData layers[{name!r}] is required; select counts='X' only if X contains raw counts")
+            raise ValueError(f"AnnData {role} source {name!r} is missing. Inspect adata.layers; select counts='X', normalized=None only if X contains raw counts, or normalized=None for counts-only export.")
         return value
-    count_matrix = expression(counts)
+    count_matrix = expression(counts, "counts")
     if count_matrix is None:
         raise ValueError("selected counts matrix is missing")
     if not adata.obs_names.is_unique or not adata.var_names.is_unique:
@@ -46,7 +46,7 @@ def _from_anndata(adata, root: str | Path, *, counts="counts", normalized="X",
     (root / 'metadata.schema.json').write_text(json.dumps(schema, ensure_ascii=False, allow_nan=False, indent=2), encoding='utf-8')
     entries.append(('metadata.schema.json', 'metadata_schema', 'metadata'))
     write_matrix(root / "matrices/counts.mtx.gz", count_matrix)
-    norm_matrix = expression(normalized) if normalized is not None else None
+    norm_matrix = expression(normalized, "normalized") if normalized is not None else None
     if norm_matrix is not None:
         write_matrix(root / "matrices/normalized.mtx.gz", norm_matrix)
         entries.append(("matrices/normalized.mtx.gz", "normalized", "normalized"))

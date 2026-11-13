@@ -31,7 +31,7 @@ def message(exc):
     elif isinstance(exc, OSError) and exc.errno == errno.ENOSPC:
         hint = "Free disk space; replacement needs space for the new and previous outputs."
     elif isinstance(exc, ImportError):
-        hint = "Install scx-format[anndata] in this Python environment."
+        hint = "Select your existing Scanpy/AnnData environment containing numpy, pandas, scipy and anndata; SCX does not install dependencies."
     elif isinstance(exc, OSError) and exc.errno == errno.ENOTSUP:
         hint = "Use a supported local filesystem with safe rename and hard-link support."
     elif isinstance(exc, SCXError):

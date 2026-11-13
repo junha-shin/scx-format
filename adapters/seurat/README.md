@@ -1,4 +1,4 @@
-# Seurat ↔ SCX
+# Seurat <-> SCX
 
 Use one R file in your existing SeuratObject >=5 environment; no SCX package,
 compiler or Python is required:
@@ -43,12 +43,12 @@ when actually converting to or from H5AD, not for these R operations.
 
 | Seurat | SCX | AnnData |
 |---|---|---|
-| selected assay `counts` (FEATURE × CELL) | transposed counts (CELL × FEATURE) | `layers['counts']` |
-| selected assay `data` | transposed normalized (CELL × FEATURE) | `X` |
+| selected assay `counts` (FEATURE x CELL) | transposed counts (CELL x FEATURE) | `layers['counts']` |
+| selected assay `data` | transposed normalized (CELL x FEATURE) | `X` |
 | `object[[]]` | typed cells table | `obs` |
 | `object[[assay]][[]]` | typed features table | `var` |
-| `Embeddings(object[[name]])` | CELL × COMPONENT | `obsm[name]` |
-| cell graph `object[[name]]` | CELL × CELL; no transpose | `obsp[name]` |
+| `Embeddings(object[[name]])` | CELL x COMPONENT | `obsm[name]` |
+| cell graph `object[[name]]` | CELL x CELL; no transpose | `obsp[name]` |
 
 SCX stores reduction and graph names verbatim. Embedding component labels are
 not portable in v0.1; R import generates valid Seurat component keys. Graphs are
@@ -72,10 +72,10 @@ Uses [SCX metadata schema 1.0](../../specification/metadata-schema-v1.md).
 |---|---|
 | integer without NA | `int32` |
 | integer with NA | `Int32` |
-| double, NA/NaN allowed | `float64` (missing → NaN) |
+| double, NA/NaN allowed | `float64` (missing -> NaN) |
 | logical without NA | `bool` |
 | logical with NA | `boolean` |
-| character | `object` strings; NA → null |
+| character | `object` strings; NA -> null |
 | factor / ordered factor | categorical with all levels and order retained |
 
 Empty strings, the literal `"null"`, and NA are distinct. Dates, list columns,
@@ -87,7 +87,7 @@ float types to native double; width provenance cannot be retained by R's native
 types. It rejects int64/uint32/uint64 types rather than silently round them, and
 rejects INT_MIN (R reserves its bit pattern for NA). Numeric/boolean category
 labels are rejected on import because R factor levels must be character.
-These import limits do not affect native R → SCX → AnnData dtype preservation.
+These import limits do not affect native R -> SCX -> AnnData dtype preservation.
 
 The [compatibility tables](../../compatibility/README.md) distinguish legacy
 Assay class support under SeuratObject 5 from the untested Seurat 4 runtime.

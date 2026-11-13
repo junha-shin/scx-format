@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scx-format"
-version = "0.1.0a7"
+version = "0.1.0"
 description = "Text and Matrix Market interchange for single-cell data"
 readme = "README.md"
 requires-python = ">=3.10"

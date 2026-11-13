@@ -1,8 +1,8 @@
-# Seurat → SCX → AnnData PBMC3k validation
+# Seurat -> SCX -> AnnData PBMC3k validation
 
-Main's R adapter 0.1.4 additionally passed a **Python-free RDS → SCX → R**
+Main's R adapter 0.1.4 additionally passed a **Python-free RDS -> SCX -> R**
 round trip using this example's saved source object. See the
-[recorded native report](r-native-report.json): 2,700 cells × 13,714 features,
+[recorded native report](r-native-report.json): 2,700 cells x 13,714 features,
 exact metadata and zero errors for counts, normalized data, PCA/UMAP and NN/SNN
 graphs. Python was hidden and external processes were forbidden. Reproduce
 after installing 0.1.4 with `Rscript adapters/seurat/scripts/validate-rds.R
@@ -19,7 +19,7 @@ AnnData is then exported back to SCX and read into Seurat for a reverse check.
 - [Dataset context and 10x source links](https://scanpy.readthedocs.io/en/stable/generated/scanpy.datasets.pbmc3k.html)
 - Archive: https://cf.10xgenomics.com/samples/cell-exp/1.1.0/pbmc3k/pbmc3k_filtered_gene_bc_matrices.tar.gz
 - SHA-256: `847d6ebd9a1ec9a768f2be7e40ca42cbfe75ebeb6d76a4c24167041699dc28b5`
-- Original: 2,700 cells × 32,738 genes. Ensembl gene IDs are used to avoid gene-symbol duplication or Seurat name rewriting.
+- Original: 2,700 cells x 32,738 genes. Ensembl gene IDs are used to avoid gene-symbol duplication or Seurat name rewriting.
 
 From the repository root, with R and Python available:
 
@@ -46,10 +46,10 @@ Seurat keeps genes expressed in at least three cells, performs LogNormalize
 exercise integer, double, logical, ordered factor with an unused level, character
 empty/literal-null strings, and missing values. These are not biological labels.
 
-R writes independent reference expression matrices in native FEATURE × CELL
+R writes independent reference expression matrices in native FEATURE x CELL
 orientation. Python compares their transpose to AnnData counts and X, compares
 PCA/UMAP and both graphs, and checks cell/feature IDs and order. Counts require
-zero error; floating matrices require maximum absolute error ≤ 1e-12. Metadata
+zero error; floating matrices require maximum absolute error <= 1e-12. Metadata
 values, native dtype mappings, factor levels/order and missing masks are checked
 exactly, both in memory and after H5AD serialization. Pandas may infer string
 storage for categorical labels on H5AD read; category values/order are retained.
@@ -66,10 +66,10 @@ positions are retained on reverse import.
 ## Recorded results and environment
 
 The 2026-11-09 validation used Seurat 5.6.0 / SeuratObject 5.4.0 with R 4.5.2
-and Python 3.12.14. It passed for 2,700 cells × 13,714 retained genes. Counts,
+and Python 3.12.14. It passed for 2,700 cells x 13,714 retained genes. Counts,
 normalized expression, PCA, UMAP and NN/SNN graphs all had maximum absolute
 error **0.0**. Cell/feature order and typed metadata matched, and the reverse
-AnnData → SCX → Seurat comparison passed.
+AnnData -> SCX -> Seurat comparison passed.
 
 See `report.json` for measured errors and R/Python versions. `R-packages.tsv`
 and `R-session.txt` record the actual R environment; `python-requirements.txt`

@@ -1,8 +1,15 @@
 # Quickstart
 
-Start with [Python notebook](quickstart.ipynb) or [R script](quickstart.R).
-Download the matching SCX file, create the tiny example (or use your existing object),
-then save/read SCX and export TSV. No SCX package installation is needed.
+Use your existing adata or Seurat object in your existing analysis environment.
+Download [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py)
+or [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R)
+into the current working folder. No SCX installation is needed.
+
+- [Python notebook](quickstart.ipynb): raw counts in adata.layers['counts'], normalized values in X.
+- [R script](quickstart.R): your Seurat object, counts/data in the active assay.
+
+Run the four calls to load SCX, save, read, and export TSV. Pick fresh output
+names for each run. [Counts choices and common errors](../docs/first-use.md).
 
 ## Detailed walkthrough
 
@@ -52,7 +59,7 @@ The counts table in both languages is:
 | cell2 | 0 | 2 | 0 | 4 |
 | cell3 | 5 | 1 | 0 | 0 |
 
-SCX and TSV are **CELL Ã— FEATURE**. Seurat's in-memory matrix is FEATURE Ã— CELL;
+SCX and TSV are **CELL x FEATURE**. Seurat's in-memory matrix is FEATURE x CELL;
 the R adapter handles that transpose. Seurat also adds QC metadata, so the two
 objects' complete metadata tables are not expected to be identical across languages.
 The lessons check exact metadata round-trip within each environment.
@@ -108,7 +115,7 @@ Dense TSV can be very large: use subsets and gzip; do not densify real input
 matrices for display. TSV is an expression table, not a metadata-preserving
 replacement for SCX.
 
-- [Seurat â†” AnnData conversion recipes](../docs/getting-started.md)
+- [Seurat <-> AnnData conversion recipes](../docs/getting-started.md)
 - [Real PBMC3k lesson and validation](../examples/pbmc3k/README.md)
 - [PBMC3k R/Python TSV correctness and performance](../examples/tsv-pbmc3k/README.md)
 - [TSV memory and format limits](../docs/tsv-export.md)

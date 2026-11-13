@@ -1,7 +1,7 @@
 # PBMC3k real-data validation
 
 This example validates the supported SCX alpha profile using real single-cell
-RNA-seq counts, not synthetic expression data. It exercises H5AD → SCX → H5AD
+RNA-seq counts, not synthetic expression data. It exercises H5AD -> SCX -> H5AD
 through all three CLI commands and fails on any comparison error.
 
 ## Source and provenance
@@ -10,7 +10,7 @@ through all three CLI commands and fails on any comparison error.
 - [Scanpy dataset documentation](https://scanpy.readthedocs.io/en/stable/generated/scanpy.datasets.pbmc3k.html)
 - Download: https://falexwolf.de/data/pbmc3k_raw.h5ad
 - SHA-256: `89a96f1beaa2dd83a687666d3f19a4513ac27a2a2d12581fcd77afed7ea653a1`
-- Original shape: 2,700 cells × 32,738 genes.
+- Original shape: 2,700 cells x 32,738 genes.
 
 Raw and generated datasets are downloaded locally and excluded from Git. The
 repository MIT license covers our code, not the upstream dataset; consult the
@@ -51,13 +51,13 @@ its own restored copy, not against reference coordinates.
 6. Assert exact cell/feature order and metadata values, dtypes, categorical order,
    unused levels and missing masks with `assert_frame_equal(check_exact=True)`; compare counts,
    normalized expression, PCA, UMAP, connectivities and distances with maximum
-   absolute error ≤ 1e-6. Sparse comparisons do not densify expression matrices.
+   absolute error <= 1e-6. Sparse comparisons do not densify expression matrices.
 
 ## Scope and issues found
 
 The checked-in `report.json` records the actual results and dependency versions.
 The final Windows/Python 3.12.14 run on 2026-11-09 passed all comparisons for
-2,700 cells × 13,714 retained genes (2,282,976 nonzero counts). Counts,
+2,700 cells x 13,714 retained genes (2,282,976 nonzero counts). Counts,
 normalized expression, PCA, UMAP, connectivities and distances all had maximum
 absolute error **0.0**. Cell/feature order and typed metadata matched exactly.
 

@@ -8,7 +8,7 @@ The archive SHA-256 is
 `847d6ebd9a1ec9a768f2be7e40ca42cbfe75ebeb6d76a4c24167041699dc28b5`.
 Preparation reads named archive members without extracting filesystem paths,
 retains genes detected in at least three cells, and uses Ensembl feature IDs.
-The result is **2,700 cells × 13,714 features**, **2,282,976 nonzero counts**.
+The result is **2,700 cells x 13,714 features**, **2,282,976 nonzero counts**.
 Normalized expression is float64 `log1p(counts / filtered-cell total * 10000)`.
 Both exporters receive this exact same expression-only SCX directory. This is
 an export/transport test, not a comparison of Scanpy and Seurat analysis methods.
@@ -16,13 +16,13 @@ an export/transport test, not a comparison of Scanpy and Seurat analysis methods
 ## Current R optimization
 
 [Before/after performance, memory and safety](optimization.md). Full R outputs
-are about 3.6–4.1× faster on this PBMC3k input; output values and sizes are
+are about 3.6-4.1x faster on this PBMC3k input; output values and sizes are
 unchanged. Small subset validation remains the time floor. The report includes
 the small observed peak-memory increases rather than claiming memory savings.
 
 ## Recorded baseline real-data results
 
-[Measured results and interpretation](results.md) · [all observations and hashes](results.json).
+[Measured results and interpretation](results.md) | [all observations and hashes](results.json).
 Counts and normalized matched exactly in both repeats, including all zeros and
 requested subset order. The results are local Windows measurements; CI smoke
 checks are separately described below.

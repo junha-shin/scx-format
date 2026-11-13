@@ -1,14 +1,14 @@
-# Verify alpha.7 release files
+# Verify 0.1.0 release files
 
-Standalone release **v0.1.0-alpha.7**, optional Python **0.1.0a7** / R **0.1.6**.
+Standalone release **v0.1.0**, optional Python **0.1.0** / R **0.1.7**.
 Format **0.1-alpha**, metadata schema **1.0**. Older tags/assets are unchanged.
 The default installation-free instructions are in [setup](install.md) and the
-downloadable [USAGE.md](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/USAGE.md).
+downloadable [USAGE.md](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/USAGE.md).
 
 ## Check downloaded bytes first
 
 Download `scx.py` or `scx.R` and `SHA256SUMS` from the
-[versioned release](https://github.com/junha-shin/scx-format/releases/tag/v0.1.0-alpha.7).
+[versioned release](https://github.com/junha-shin/scx-format/releases/tag/v0.1.0).
 Compute SHA-256 and compare with the entry for that exact filename:
 
 ```sh
@@ -31,12 +31,12 @@ After verification, import/source and check the release ID:
 
 ```python
 import scx
-assert scx.SCX_VERSION == "v0.1.0-alpha.7"
+assert scx.SCX_VERSION == "v0.1.0"
 ```
 
 ```r
 source("scx.R")
-stopifnot(SCX_VERSION == "v0.1.0-alpha.7")
+stopifnot(SCX_VERSION == "v0.1.0")
 ```
 
 This checks the loaded file version, not its integrity: hash checking comes

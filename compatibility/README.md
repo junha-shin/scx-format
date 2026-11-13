@@ -35,7 +35,7 @@ Exact environment constraints below are the reproducible supported test profiles
 | Seurat 3/4 runtime or SeuratObject < 5 | Not supported/tested; legacy **Assay class** support is tested under SeuratObject 5, not an old Seurat runtime |
 | Other AnnData/dependency versions | Not qualified by this matrix; no guarantee is inferred from an installation satisfying the minimum |
 
-`pbmc-anndata-*.json` are measured local reports for 2,700 cells × 13,714 genes.
+`pbmc-anndata-*.json` are measured local reports for 2,700 cells x 13,714 genes.
 They include dependency versions, source RDS hashes, matrix errors, axis order,
 metadata checks and the reverse Seurat assay-class check. Both forms are exported
 from the same genuine PBMC3k Seurat analysis; conversion to legacy Assay first
@@ -48,9 +48,9 @@ Default public writes preserve expression and typed metadata; embeddings/graphs
 require `analysis=True` / `analysis=TRUE` (CLI `--analysis`). Read scope and
 dtype safety are unchanged. Recorded PBMC3k reports predate the new wrapper API.
 Every bridge job
-tests both assay classes, H5AD serialization, CELL × FEATURE orientation on a
+tests both assay classes, H5AD serialization, CELL x FEATURE orientation on a
 nonsquare matrix, an asymmetric graph, dtype/missing/category preservation and
-AnnData → SCX → Seurat import into the requested assay class. Small fixtures run
+AnnData -> SCX -> Seurat import into the requested assay class. Small fixtures run
 in CI; PBMC3k reports record the separate local real-data validation. CI uploads
 JUnit and per-environment JSON artifacts. Recorded success is evidence for the
 listed runs, not a performance or general biological correctness claim.
@@ -65,11 +65,11 @@ writer races, rollback and corrupt transport; see [safe I/O](../docs/safe-io.md)
 
 | Metadata dtype | Python / SCX | Native R export | R import |
 |---|---|---|---|
-| Signed/unsigned integer widths 8/16/32/64 | Preserved; nullable Int/UInt variants retain missing mask | integer → int32 or Int32 | signed <=32, unsigned <=16 → integer; INT_MIN rejected; wider/uint32/uint64 rejected |
-| float32/64; nullable Float32/64 | Width, values and missing mask preserved in SCX | double → float64; NA/NaN → null | native double; original width/nullable-wrapper provenance is not retained |
-| bool / boolean | Values and missing mask preserved | logical → bool/boolean | logical |
-| object/string/str text | Empty, literal `null` and missing distinct; Python/Arrow storage backend not portable | character → object text | character |
-| categorical | Values, category dtype, order and unused categories preserved | factor/ordered factor → character-category schema | character categories → factor; numeric/boolean category labels rejected |
+| Signed/unsigned integer widths 8/16/32/64 | Preserved; nullable Int/UInt variants retain missing mask | integer -> int32 or Int32 | signed <=32, unsigned <=16 -> integer; INT_MIN rejected; wider/uint32/uint64 rejected |
+| float32/64; nullable Float32/64 | Width, values and missing mask preserved in SCX | double -> float64; NA/NaN -> null | native double; original width/nullable-wrapper provenance is not retained |
+| bool / boolean | Values and missing mask preserved | logical -> bool/boolean | logical |
+| object/string/str text | Empty, literal `null` and missing distinct; Python/Arrow storage backend not portable | character -> object text | character |
+| categorical | Values, category dtype, order and unused categories preserved | factor/ordered factor -> character-category schema | character categories -> factor; numeric/boolean category labels rejected |
 | datetime, complex, bytes, arbitrary/mixed objects | Unsupported metadata types; export rejected | Date/POSIXt, list, custom numeric/bit64 classes rejected | Unknown or nonrepresentable schema types rejected |
 
 H5AD is a separate transport constraint: AnnData 0.11/0.12 cannot serialize an
@@ -87,11 +87,11 @@ not part of the schema.
 
 | Item | Supported mapping | Limit / omission |
 |---|---|---|
-| counts | Seurat FEATURE × CELL transposed to SCX CELL × FEATURE; AnnData `layers['counts']` | One exact layer, nonnegative finite values |
-| normalized | Seurat `data` transposed; SCX normalized → AnnData X | Optional; otherwise X uses counts |
+| counts | Seurat FEATURE x CELL transposed to SCX CELL x FEATURE; AnnData `layers['counts']` | One exact layer, nonnegative finite values |
+| normalized | Seurat `data` transposed; SCX normalized -> AnnData X | Optional; otherwise X uses counts |
 | obs / var | Typed cell/feature metadata, canonical ID order | Single feature space; metadata index IDs are text |
-| embedding | Named Seurat reduction → CELL × COMPONENT → `obsm[name]` | Component labels/Seurat keys regenerated; loadings omitted |
-| cell graph | CELL × CELL → `obsp[name]`; directed entries retained | No transpose, no graph recomputation |
+| embedding | Named Seurat reduction -> CELL x COMPONENT -> `obsm[name]` | Component labels/Seurat keys regenerated; loadings omitted |
+| cell graph | CELL x CELL -> `obsp[name]`; directed entries retained | No transpose, no graph recomputation |
 | additional assays/layers, scale.data, raw | Not in profile | Explicit assay/layer selection required; unsupported objects omitted with warning |
 | identities, command history, misc / uns, varm, varp, images/spatial | Not in profile | Keep source Seurat/H5AD if these internals are needed |
 
@@ -100,7 +100,7 @@ not part of the schema.
 | Trigger | Result |
 |---|---|
 | Existing export directory or H5AD file | Refuse by default; explicit --overwrite / overwrite=True / overwrite=TRUE enables staged replacement with rollback/backup retention |
-| R adapter 0.1.4 without Python | Supported for Seurat ↔ SCX; native R validation/publication is always enabled |
+| R adapter 0.1.4 without Python | Supported for Seurat <-> SCX; native R validation/publication is always enabled |
 | R adapter 0.1.3 (alpha.5) without Python | Its original validated import/export requires Python; release assets are unchanged |
 | Output lock, output symlink, unrelated directory replacement | Refuse; inspect the named lock/recovery paths or choose a new destination |
 | Missing counts, split layers without an exact selected layer | Fail; explicitly JoinLayers/select a layer first |

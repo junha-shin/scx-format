@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased — guided tutorials
+## v0.1.0 - first stable utilities
+
+- Existing-object quickstarts replace synthetic data setup with four API calls.
+- First-use dependency, counts-source and recovery guidance; actionable errors.
+- README files use plain ASCII, enforced by repository instructions and CI.
+- Analysis-only CI environments execute both tutorial levels, round-trip and
+  failure scenarios without installing SCX. Optional R package is 0.1.7.
+- On-disk format 0.1-alpha and metadata schema 1.0 remain compatible.
+
+### Guided tutorials
 
 - Executed Python notebook and sectioned RStudio script use the same tiny data
   and pinned alpha.7 files, with verified downloads and no SCX installation.

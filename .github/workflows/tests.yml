@@ -17,6 +17,7 @@ jobs:
           python-version: '3.12'
       # Deliberately install only the analysis environment, never SCX.
       - run: pip install -r compatibility/anndata-0.13.4.txt
+      - run: python scripts/check_readmes.py
       - run: python scripts/build_standalone.py --check
       - run: python scripts/stage_standalone_release.py .compat-results/standalone-release
       - run: python scripts/check_standalone.py --script .compat-results/standalone-release/scx.py --require-uninstalled --output .compat-results/standalone-python
@@ -129,8 +130,8 @@ jobs:
           python -m build
           python -m pip install --force-reinstall --no-deps dist/*.whl
           R CMD build adapters/seurat
-          R CMD INSTALL scxSeurat_0.1.6.tar.gz
-          mv scxSeurat_0.1.6.tar.gz dist/
+          R CMD INSTALL scxSeurat_0.1.7.tar.gz
+          mv scxSeurat_0.1.7.tar.gz dist/
           python examples/quickstart/verify.py --output .compat-results/release-smoke
       - uses: actions/upload-artifact@v4
         if: matrix.anndata == '0.13.4'

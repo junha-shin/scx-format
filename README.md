@@ -1,53 +1,51 @@
-# SCX â€” Single Cell eXchange
+# SCX - Single Cell eXchange
 
 Move one scRNA-seq assay between Seurat and AnnData using an inspectable directory.
-Expression matrices always use **CELL Ã— FEATURE** orientation.
+Expression matrices always use **CELL x FEATURE** orientation.
 
-## Start here: a five-minute lesson
+## Start with your existing object
 
 **No SCX package installation.** Use your existing analysis environment:
 
 | Environment | Open and run | What you will see |
 |---|---|---|
-| Python / Scanpy | [quickstart.ipynb](tutorials/quickstart.ipynb) â€” download, choose your analysis kernel, Restart & Run All | Save/read SCX and export TSV |
-| R / Seurat | [quickstart.R](tutorials/quickstart.R) â€” open in RStudio and run numbered sections, or source the file | Save/read SCX and export TSV; no Python needed |
+| Python / Scanpy | [quickstart.ipynb](tutorials/quickstart.ipynb) - use the kernel containing your adata object | Save/read SCX and export TSV |
+| R / Seurat | [quickstart.R](tutorials/quickstart.R) - use your existing Seurat object in RStudio | Save/read SCX and export TSV; no Python needed |
 
-The quickstarts show only the essential utilities with tiny example data.
+The quickstarts use your existing adata or Seurat object directly.
 [Detailed lessons](tutorials/README.md#detailed-walkthrough) cover verified downloads,
 metadata, additional options and recovery.
 
-## Use v0.1.0-alpha.7 in your existing environment
+## Use v0.1.0 in your existing environment
 
-Download [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.py) or [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.R)
-and [SHA256SUMS](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/SHA256SUMS). Verify the file's checksum before import/source.
-[Offline usage guide](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/USAGE.md) Â· [release notes](docs/releases/v0.1.0-alpha.7.md).
+Download [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py) or [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R)
+and [SHA256SUMS](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/SHA256SUMS). Verify the file's checksum before import/source.
+[Offline usage guide](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/USAGE.md) | [release notes](docs/releases/v0.1.0.md).
 These URLs are pinned to this release; previous alpha assets are unchanged.
 
 ## Read and write
 
 **No SCX package installation is needed.** Save the single
-[Python file](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.py)
+[Python file](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py)
 next to your notebook/script:
 
 ```python
 import scx
-assert scx.SCX_VERSION == "v0.1.0-alpha.7"
 scx.write_scx(adata, "sample.scx")
 restored = scx.read_scx("sample.scx")
 ```
 
-Save the matching [R file](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.R), then in your existing Seurat environment:
+Save the matching [R file](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R), then in your existing Seurat environment:
 
 ```r
 source("scx.R")
-stopifnot(SCX_VERSION == "v0.1.0-alpha.7")
 write_scx(seurat_object, "sample.scx")
 restored <- read_scx("sample.scx")
 ```
 
 Downloaded files work offline. They reuse existing analysis dependencies and
 never install packages. R does not need Python or an SCX compiler.
-See [no-install setup, dependencies and limits](docs/install.md).
+See [no-install setup, dependencies and limits](docs/install.md) and [first-use help](docs/first-use.md).
 
 The default preserves **counts, optional normalized expression, and typed
 cell/feature metadata**. Python uses `layers['counts']` and `X`; R uses the
@@ -68,13 +66,13 @@ languages: `to_tsv(path, output, matrix="counts", cells=..., features=...)`
 are supported. Output buffers are limited to one row; R renders directly from
 sparse rows, and Python densifies only one row. Existing files are always protected. See [TSV export and memory limits](docs/tsv-export.md).
 
-- [Usage and Seurat â†” AnnData examples](docs/getting-started.md)
+- [Usage and Seurat <-> AnnData examples](docs/getting-started.md)
 - [Support, dtype limits and errors](compatibility/README.md)
 - [Format](specification/SCX-v0.1.md) and [metadata schema](specification/metadata-schema-v1.md)
 - [Reproducible release-file verification](docs/release-verification.md)
 - [PBMC3k](examples/pbmc3k/README.md), [Seurat validation](examples/seurat/README.md), [benchmarks](benchmarks/README.md)
 - [PBMC3k R/Python TSV equivalence and performance](examples/tsv-pbmc3k/README.md)
-- [Changes](CHANGELOG.md) and [alpha.7 release notes](docs/releases/v0.1.0-alpha.7.md)
+- [Changes](CHANGELOG.md) and [0.1.0 release notes](docs/releases/v0.1.0.md)
 
 One feature space / selected assay is supported. Extra assays, arbitrary analysis
 internals, loadings, spatial and multiome data remain outside the profile.

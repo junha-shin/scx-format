@@ -137,19 +137,42 @@ def quick_lessons(output: Path, rscript: str):
     for language, filename in (("python", "scx.py"), ("r", "scx.R")):
         work = output / ("quick-" + language)
         work.mkdir()
-        shutil.copyfile(output / language / "scx-tutorial/files" / filename, work / filename)
+        shutil.copyfile(ROOT / "standalone" / filename, work / filename)
     work = output / "quick-python"
     notebook = nbformat.read(ROOT / "tutorials/quickstart.ipynb", as_version=4)
     nbformat.validate(notebook)
+    notebook.cells.insert(0, nbformat.v4.new_code_cell("""
+import anndata as ad
+import numpy as np
+from scipy import sparse
+counts = sparse.csr_matrix([[1,0,3],[0,2,1]])
+adata = ad.AnnData(X=np.log1p(counts.astype(float)))
+adata.layers['counts'] = counts
+"""))
     notebook.cells.append(nbformat.v4.new_code_cell("""
 from pathlib import Path
 import hashlib
 assert Path(scx.__file__).resolve() == Path('scx.py').resolve()
 np.testing.assert_array_equal(restored.layers['counts'].toarray(), counts.toarray())
 np.testing.assert_allclose(restored.X.toarray(), adata.X.toarray(), rtol=0, atol=1e-12)
+missing = adata.copy()
+del missing.layers['counts']
+try:
+    scx.write_scx(missing, 'missing-counts.scx')
+except ValueError as error:
+    assert 'counts' in str(error) and 'normalized=None' in str(error)
+else:
+    raise AssertionError('Missing counts accepted')
+assert not Path('missing-counts.scx').exists()
+try:
+    scx.read_scx('absent.scx')
+except (OSError, ValueError):
+    pass
+else:
+    raise AssertionError('Missing input accepted')
 original = hashlib.sha256(Path('counts.tsv').read_bytes()).hexdigest()
 try:
-    scx.to_tsv('example.scx', 'counts.tsv')
+    scx.to_tsv('sample.scx', 'counts.tsv')
 except FileExistsError:
     pass
 else:
@@ -159,16 +182,29 @@ assert hashlib.sha256(Path('counts.tsv').read_bytes()).hexdigest() == original
     NotebookClient(notebook, timeout=180, kernel_name="scx-tutorial-test",
                    resources={"metadata": {"path": str(work)}}).execute()
     notebook.cells.pop()
+    notebook.cells.pop(0)
     for cell in notebook.cells:
         cell.metadata.pop("execution", None)
     nbformat.write(notebook, output / "quickstart-executed.ipynb")
     wrapper = output / "check-quick.R"
     wrapper.write_text('''args <- commandArgs(TRUE)
+source("scx.R")
+counts <- Matrix::Matrix(matrix(c(1,0,3,0,2,1),nrow=3),sparse=TRUE)
+dimnames(counts) <- list(c("gene1","gene2","gene3"),c("cell1","cell2"))
+object <- SeuratObject::CreateSeuratObject(counts=counts)
+SeuratObject::LayerData(object,layer="data") <- log1p(counts)
 source(args[1])
 stopifnot(max(abs(SeuratObject::LayerData(restored,layer="counts")-counts))==0,
   max(abs(SeuratObject::LayerData(restored,layer="data")-log1p(counts)))<=1e-12)
+bad <- object
+SeuratObject::DefaultAssay(bad) <- "RNA"
+SeuratObject::LayerData(bad,layer="counts") <- NULL
+missing <- tryCatch({write_scx(bad,"missing-counts.scx");NULL},error=conditionMessage)
+stopifnot(!is.null(missing),grepl("counts",missing),!dir.exists("missing-counts.scx"))
+absent <- tryCatch({read_scx("absent.scx");NULL},error=conditionMessage)
+stopifnot(!is.null(absent))
 previous <- digest::digest("counts.tsv",file=TRUE,algo="sha256")
-refusal <- tryCatch({to_tsv("example.scx","counts.tsv");NULL},error=conditionMessage)
+refusal <- tryCatch({to_tsv("sample.scx","counts.tsv");NULL},error=conditionMessage)
 stopifnot(!is.null(refusal),grepl("already exists",refusal,fixed=TRUE),
   previous==digest::digest("counts.tsv",file=TRUE,algo="sha256"))
 ''', encoding="utf-8")
@@ -183,7 +219,9 @@ stopifnot(!is.null(refusal),grepl("already exists",refusal,fixed=TRUE),
         table = pd.read_csv(output / ("quick-" + language) / "counts.tsv", sep="\t", index_col=0)
         assert table.values.tolist() == expected
     return {"passed": True, "counts_and_normalized_roundtrip": True,
-            "TSV_values_equal": True, "overwrite_protection": True}
+            "TSV_values_equal": True, "overwrite_protection": True,
+            "missing_counts_rejected": True, "missing_input_rejected": True,
+            "SCX_VERSION": json.loads((ROOT / "release.json").read_text(encoding="utf-8"))["tag"]}
 
 
 def main():

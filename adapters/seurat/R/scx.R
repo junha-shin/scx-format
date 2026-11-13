@@ -120,11 +120,11 @@ write_scx_seurat <- function(object, path, assay = SeuratObject::DefaultAssay(ob
                              python = NULL, warn_scope = TRUE) {
   if (!inherits(object, "Seurat")) stop("object must be Seurat")
   if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) stop("overwrite must be TRUE or FALSE")
-  if ((file.exists(path) || dir.exists(path)) && !overwrite) stop("output already exists; choose a new path or use overwrite = TRUE")
+  if ((file.exists(path) || dir.exists(path)) && !overwrite) stop("output already exists; choose a new output path")
   # Kept for source compatibility; no Python executable is inspected or invoked.
   if (!assay %in% SeuratObject::Assays(object)) stop("unknown assay")
   layers <- SeuratObject::Layers(object[[assay]], search = NA)
-  if (!counts_layer %in% layers) stop("exact counts layer required; join split layers explicitly with JoinLayers first")
+  if (!counts_layer %in% layers) stop("exact counts layer required; inspect SeuratObject::Layers(object[[assay]], search=NA), select counts explicitly, and join split layers explicitly with JoinLayers first")
   counts <- SeuratObject::LayerData(object[[assay]], layer = counts_layer)
   features <- rownames(counts); cells <- colnames(counts)
   .scx_ids(cells); .scx_ids(features)
