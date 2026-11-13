@@ -2,13 +2,13 @@
 
 Release: https://github.com/junha-shin/scx-format/releases/tag/v0.1.0
 
-Download only the language file you need (`scx.py` or `scx.R`) and `SHA256SUMS`.
-Use the Scanpy/Seurat environment you already have. No SCX installation,
-compiler or automatic dependency installation is used. Files are canonical UTF-8/LF.
+Download scx.py or scx.R and SHA256SUMS.
+Use your existing Scanpy or Seurat environment. No SCX package or compiler is needed.
+The files do not install dependencies. They use UTF-8 and LF line endings.
 
 ## Verify before running
 
-Compare the computed SHA-256 with the exact file-name entry in `SHA256SUMS`.
+Compute SHA-256. Compare it with the entry for that exact file in SHA256SUMS.
 
 ```sh
 # Linux; all listed files must be present for this combined command
@@ -22,15 +22,15 @@ Get-FileHash .\scx.py -Algorithm SHA256
 Get-FileHash .\scx.R -Algorithm SHA256
 ```
 
-If downloading only one language file, compare that file's entry individually.
-The complete checksum list also covers this guide and optional package assets.
-Use the release-specific URLs below, not `latest` or `main`, in saved workflows.
-Keep the script and checksum alongside the analysis. A mismatch means the file
-must not be imported/sourced; download the release asset again.
+For one language file, check just that file's entry.
+The full list also covers this guide and optional packages.
+Use the fixed release URLs below in saved workflows, not latest or main.
+Keep the file and checksum with your analysis.
+If a hash differs, do not load the file. Download the release file again.
 
 ## Python / existing Scanpy environment
 
-Save `scx.py` beside your notebook/script:
+Save scx.py beside your script or notebook:
 
 ```python
 import scx
@@ -42,11 +42,11 @@ scx.to_tsv("sample.scx", "selected.tsv.gz", matrix="normalized",
            cells=["cell3", "cell1"], features=["geneB", "geneA"])
 ```
 
-The selection example uses placeholder IDs: substitute IDs actually in your data.
-Existing NumPy >=1.24, pandas >=2, SciPy >=1.11.4 and Python >=3.10 are needed.
-Object/H5AD conversion also needs AnnData >=0.11.4. No missing package is installed
-automatically. If a different `scx` is already imported, restart the kernel and
-check `scx.__file__` points to this saved file.
+Replace the example IDs with IDs from your data.
+You need Python >=3.10, NumPy >=1.24, pandas >=2, and SciPy >=1.11.4.
+Object and H5AD conversion need AnnData >=0.11.4.
+Missing packages are not installed for you.
+If another scx module is loaded, restart the kernel and check `scx.__file__`.
 
 ```sh
 python scx.py from-h5ad input.h5ad sample.scx
@@ -56,7 +56,7 @@ python scx.py to-h5ad sample.scx restored.h5ad
 
 ## R / existing Seurat environment
 
-Save `scx.R`, then:
+Save scx.R, then run:
 
 ```r
 source("scx.R")
@@ -68,10 +68,10 @@ to_tsv("sample.scx", "selected.tsv.gz", matrix="normalized",
        cells=c("cell3", "cell1"), features=c("geneB", "geneA"))
 ```
 
-SeuratObject >=5, Matrix, jsonlite and digest must already be present. Assay and
-Assay5 under SeuratObject >=5 are supported; an old Seurat runtime is not implied.
-No scxSeurat package, Python, reticulate or compiled SCX helper is needed.
-Missing dependencies stop with their names; nothing is installed/upgraded.
+You need SeuratObject >=5, Matrix, jsonlite, and digest.
+Assay and Assay5 are tested under SeuratObject >=5, not an older Seurat runtime.
+You do not need scxSeurat, Python, reticulate, or compiled SCX helpers.
+Missing packages cause an error with their names. Nothing is installed or upgraded.
 Use a UTF-8 R locale for non-ASCII IDs.
 
 ## Scope and safety
@@ -99,16 +99,16 @@ Use a UTF-8 R locale for non-ASCII IDs.
   transient sparse conversion still need RAM; this is not out-of-core parsing or
   a fixed RAM cap. Budget scratch/staging space and space for dense TSV output.
 
-Optional installed packages in this release are for users who prefer them;
-they are not required for these examples. Script release version is
-`SCX_VERSION`; optional package versions are Python 0.1.0 / R 0.1.7.
-Format remains 0.1-alpha and metadata schema 1.0.
+Optional packages are also available, but are not needed for these examples.
+SCX_VERSION is the script release ID.
+The optional Python package is 0.1.0; the R package is 0.1.7.
+The format remains 0.1-alpha and metadata schema 1.0.
 
-Pinned files:
+Fixed release files:
 
 - https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py
 - https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R
 - https://github.com/junha-shin/scx-format/releases/download/v0.1.0/SHA256SUMS
 
-Tagged documentation:
+Documentation for the tag:
 https://github.com/junha-shin/scx-format/blob/v0.1.0/docs/release-verification.md

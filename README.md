@@ -81,3 +81,5 @@ pytest
 After changing the adapters, run `python scripts/build_standalone.py`.
 CI tests Python and R on Linux, Windows and macOS without installing SCX.
 See the [R development guide](docs/r-only.md).
+
+See [contributing and writing rules](CONTRIBUTING.md).

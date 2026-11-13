@@ -1,7 +1,7 @@
 # Seurat <-> SCX
 
-Use one R file in your existing SeuratObject >=5 environment; no SCX package,
-compiler or Python is required:
+Use one R file in your existing SeuratObject >=5 environment.
+No SCX package, compiler, or Python is needed:
 
 ```r
 source("scx.R")
@@ -10,34 +10,31 @@ restored <- read_scx("pbmc.scx")
 write_scx(pbmc, "analysis.scx", analysis = TRUE)
 ```
 
-Save the file and `source("scx.R")` for offline use. Existing Matrix, jsonlite and
-digest are reused; missing dependencies cause an error, never an installation.
-Standalone R refuses replacement and supports single-member gzip. See
-[no-install setup and safety](../../docs/install.md). The rest of this document
-also describes optional installed-package features, which remain unchanged.
+Save scx.R once and source it offline.
+It uses existing Matrix, jsonlite, and digest packages.
+Missing packages cause an error, not an install.
+The R file refuses replacement and accepts single-member gzip.
+See [setup and safety](../../docs/install.md).
+The sections below also cover the optional installed package.
 
-The basic profile preserves counts, optional normalized expression and typed
-cell/feature metadata. Both languages use the same `read_scx` / `write_scx`
-names; default R sources are `counts` / `data`. See [installation](../../docs/install.md)
-and [cross-language examples](../../docs/getting-started.md). Legacy
-`write_scx_seurat` / `read_scx_seurat` retain their full defaults, including
-selective `reductions` / `graphs` controls. Development `source()` still needs
-installed native helpers; see [R-only details](../../docs/r-only.md).
+Default writes keep counts, optional normalized values, and typed cell/feature metadata.
+Python and R use the same read_scx / write_scx names.
+R uses counts/data by default. See [setup](../../docs/install.md) and
+[conversion examples](../../docs/getting-started.md).
+Legacy write_scx_seurat / read_scx_seurat keep their full defaults,
+including reductions/graphs selection.
+Development source() still needs installed native helpers. See [R-only use](../../docs/r-only.md).
 
-Installed-package exports stage all files, run the R-native validator, and publish using
-R's transaction code and registered native helpers. Existing destinations require explicit
-`overwrite = TRUE`; failed replacement restores or retains the previous output.
-See [safe I/O and manual recovery](../../docs/safe-io.md) for filesystem limits,
-the brief directory-replacement gap and hard-interruption behavior. R import
-retains resources from its validation pass, avoiding unvalidated rereads.
-It refuses feature IDs changed by
-Seurat rather than silently changing their alignment.
+The installed package stages and checks all files before publishing them with native helpers.
+It needs explicit overwrite=TRUE to replace existing output.
+If replacement fails, it restores or keeps the old data.
+See [recovery and storage limits](../../docs/safe-io.md).
+Reads reuse checked resources. They fail if Seurat changes feature IDs rather than risking wrong alignment.
 
-`validate_scx()` checks the R-readable subset, including native R dtype limits
-below; the Python validator additionally handles wide integer metadata and
-numeric categories that R cannot import. The optional `python` argument remains
-accepted and ignored for source compatibility. Python/AnnData are needed only
-when actually converting to or from H5AD, not for these R operations.
+validate_scx() checks the subset R can read, including native type limits.
+Python also handles wide integers and numeric categories that R cannot read.
+The legacy python argument is accepted but ignored.
+Python and AnnData are needed only for H5AD conversion.
 
 ## Mapping
 
@@ -50,23 +47,21 @@ when actually converting to or from H5AD, not for these R operations.
 | `Embeddings(object[[name]])` | CELL x COMPONENT | `obsm[name]` |
 | cell graph `object[[name]]` | CELL x CELL; no transpose | `obsp[name]` |
 
-SCX stores reduction and graph names verbatim. Embedding component labels are
-not portable in v0.1; R import generates valid Seurat component keys. Graphs are
-written as explicit numeric Matrix Market `general` matrices, including both
-directions for symmetric graphs and values for binary graphs.
+Reduction and graph names are kept.
+Embedding component labels are not portable in v0.1; R creates valid Seurat keys.
+Graphs use numeric general MTX, with both directions for symmetric graphs
+and explicit values for binary graphs.
 
-Exact layer names are required: split layers such as `counts.batch1` must first
-be explicitly joined using Seurat's `JoinLayers`. Use public `counts` and `normalized` (legacy `counts_layer` and
-`normalized_layer`) to select different exact layer names; set
-`normalized = NULL` for counts-only. A missing default `data` layer warns
-and exports counts-only. Use `reductions` and `graphs` to choose named objects
-or `character()` to omit them. Every selected object must cover the canonical
-axis exactly; matching IDs are reordered, while partial/extra cells or features
-are rejected. Reductions/graphs from another assay are rejected.
+Use exact layer names. Join split layers such as counts.batch1 with JoinLayers when needed.
+Use counts and normalized (legacy counts_layer and normalized_layer) to select layers.
+Use normalized=NULL for counts only. A missing default data layer warns and exports counts only.
+Legacy reductions and graphs select named objects; character() omits them.
+Selected objects must cover the full axis. Matching IDs are reordered.
+Extra or missing cells/features and reductions/graphs from another assay are rejected.
 
 ## Metadata types
 
-Uses [SCX metadata schema 1.0](../../specification/metadata-schema-v1.md).
+Uses [metadata schema 1.0](../../specification/metadata-schema-v1.md).
 
 | Native R | SCX / pandas |
 |---|---|
@@ -78,24 +73,23 @@ Uses [SCX metadata schema 1.0](../../specification/metadata-schema-v1.md).
 | character | `object` strings; NA -> null |
 | factor / ordered factor | categorical with all levels and order retained |
 
-Empty strings, the literal `"null"`, and NA are distinct. Dates, list columns,
-custom numeric classes (including bit64 integer64), complex values and infinity
-are rejected. No implicit conversion is applied to unsupported classes.
+Empty text, literal "null", and NA stay distinct.
+Dates, list columns, custom numeric classes (including bit64 integer64),
+complex values, and infinity are rejected. Unsupported classes are not silently converted.
 
-R import maps smaller integer widths to native integer and float32/nullable
-float types to native double; width provenance cannot be retained by R's native
-types. It rejects int64/uint32/uint64 types rather than silently round them, and
-rejects INT_MIN (R reserves its bit pattern for NA). Numeric/boolean category
-labels are rejected on import because R factor levels must be character.
-These import limits do not affect native R -> SCX -> AnnData dtype preservation.
+R reads smaller integers as native integer and float32/nullable floats as double.
+The original width cannot always be kept in native R types.
+It rejects int64/uint32/uint64 rather than rounding them.
+It also rejects INT_MIN, whose bit pattern R uses for NA.
+Numeric and boolean category labels are rejected because R factor levels are text.
+These limits do not change native R -> SCX -> AnnData type preservation.
 
-The [compatibility tables](../../compatibility/README.md) distinguish legacy
-Assay class support under SeuratObject 5 from the untested Seurat 4 runtime.
+The [compatibility tables](../../compatibility/README.md) separate legacy Assay
+under SeuratObject 5 from the untested Seurat 4 runtime.
 
-Active identities, additional assays/layers, feature loadings, scaled values,
-command history, images and arbitrary analysis settings are not in this MVP;
-the exporter emits a warning identifying its scope. Existing datasets should
-retain their original Seurat objects if those analysis internals are needed.
+Other assays/layers, identities, loadings, scaled values, history, images,
+and arbitrary analysis settings are outside the profile.
+The exporter warns about omitted data. Keep the original Seurat object.
 
 ## Tests and real data
 
@@ -106,10 +100,10 @@ python adapters/seurat/scripts/check_bridge.py .r-tests/bridge
 Rscript examples/seurat/check_reverse.R .r-tests/bridge /path/to/python
 ```
 
-The bridge tests include a nonsquare expression matrix and an asymmetric cell
-graph, so incorrect transposition cannot pass by shape or symmetry alone.
-[PBMC3k validation](../../examples/seurat/README.md) exercises genuine Seurat
-normalization, PCA/UMAP and cell graphs on a public dataset.
+The bridge uses a non-square expression matrix and a directed graph.
+A wrong transpose cannot pass just because a matrix is square or symmetric.
+[PBMC3k checks](../../examples/seurat/README.md) use real Seurat normalization,
+PCA/UMAP, and cell graphs.
 
 API references: [LayerData](https://satijalab.github.io/seurat-object/reference/Layers.html),
 [CreateSeuratObject](https://satijalab.github.io/seurat-object/reference/CreateSeuratObject.html),

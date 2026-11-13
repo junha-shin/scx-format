@@ -1,13 +1,12 @@
 # Read, write and convert
 
-First time? Follow the [five-minute Python notebook or RStudio lesson](../tutorials/README.md)
-with generated data and expected results. This page is the recipe reference.
+Start with the [PBMC3k examples](../tutorials/README.md).
+This page shows how to use your own objects.
 
-Start with the [no-install files](install.md) in your existing environment.
-The Python examples assume the saved `scx.py` beside your notebook; R uses
-`source("scx.R")` on the saved R file.
-Download the **v0.1.0** files and verify SHA-256 first; see the
-[release-file checks](release-verification.md). Both expose `SCX_VERSION`.
+Use the [no-install files](install.md) in your existing environment.
+Save scx.py beside your notebook, or load scx.R with `source("scx.R")`.
+Download v0.1.0 and [check its SHA-256](release-verification.md) before loading it.
+Both files expose `SCX_VERSION`.
 
 ## Seurat → SCX → AnnData
 
@@ -21,8 +20,7 @@ import scx
 adata = scx.read_scx("sample.scx")
 ```
 
-To save H5AD with SCX's protected publication, use
-`python scx.py to-h5ad sample.scx sample.h5ad`.
+Save H5AD safely with `python scx.py to-h5ad sample.scx sample.h5ad`.
 
 ## AnnData → SCX → Seurat
 
@@ -37,7 +35,8 @@ seurat_object <- read_scx("sample.scx")
 ```
 
 Both languages use `write_scx(object, path)` and `read_scx(path)`.
-`validate_scx(path)` is optional diagnosis; read/write already validate. No separate SCX installation is required.
+These calls check the data. Use `validate_scx(path)` for a separate check.
+No SCX package install is needed.
 
 ## Default scope
 
@@ -62,25 +61,26 @@ write_scx(seurat_object, "counts-only.scx", normalized = NULL)
 write_scx(seurat_object, "selected.scx", assay = "RNA", normalized = "data")
 ```
 
-Python defaults to `layers['counts']` / `X`; R to the selected assay's
-`counts` / `data`. Missing counts fail explicitly. Normalized expression is
-optional. Reads restore normalized to AnnData `X` / Seurat `data` and counts
-to `layers['counts']` / `counts`; AnnData `X` falls back to counts when needed.
-Reads restore supported embeddings/graphs present in existing datasets.
+Python uses `layers['counts']` / `X`. R uses counts/data in the selected assay.
+Counts are required. Normalized values are optional.
+On read, counts go to `layers['counts']` / `counts`.
+Normalized values go to AnnData `X` / Seurat `data`.
+Without normalized values, AnnData `X` uses counts.
+Reads also restore supported embeddings and graphs found in the input.
 
 ## Safety, errors and migration
 
-Standalone R refuses every existing output and `overwrite=TRUE`: choose a
-new directory. Python supports deliberate `overwrite=True` (CLI `--overwrite`).
-The optional installed R package also supports explicit replacement with rollback.
-A failed standalone R publication retains an unreadable partial folder and lock;
-existing data are untouched. Only recover a lock after the writer stops.
-See [recovery](safe-io.md).
+The R file refuses existing outputs and `overwrite=TRUE`. Choose a new folder.
+Python supports explicit `overwrite=True` (CLI: `--overwrite`).
+The optional R package also supports replacement and rollback.
+An interrupted R file copy may leave a partial folder and lock.
+Only recover the lock after the writer stops. See [recovery](safe-io.md).
 
-For “already exists”, choose a new output (or deliberate overwrite where supported). For missing
-counts, supply actual raw counts. For dtype errors, choose supported scalar
-metadata types. For corruption/axis mismatch, re-export from the original
-object. SCX never guesses counts or silently coerces unsupported metadata.
+For an existing output, choose a new path or use supported overwrite options.
+For missing counts, select the actual raw counts.
+For type errors, use supported scalar metadata types.
+For damaged files or wrong axes, export again from the original object.
+SCX does not guess counts or silently change unsupported metadata.
 
 ```sh
 python scx.py from-h5ad input.h5ad sample.scx
@@ -89,15 +89,13 @@ python scx.py validate sample.scx
 python scx.py to-h5ad sample.scx restored.h5ad
 ```
 
-**New API and CLI exports use the basic profile by default.** Add `--analysis`
-to existing CLI workflows requiring embeddings/graphs. Legacy `from_anndata`
-and `write_scx_seurat` retain their full defaults. The format/metadata schema
-are unchanged, and existing SCX datasets remain readable. R no longer needs
-Python; alpha.5 release assets remain unchanged.
-## Inspect expression in a regular TSV
+The API and CLI write the basic profile by default.
+Add `--analysis` to include embeddings and graphs.
+Legacy `from_anndata` and `write_scx_seurat` keep their full defaults.
+The file format and metadata schema are unchanged. Existing SCX files remain readable.
+Current R tools do not need Python. Historical alpha.5 files keep their original behavior.
 
 Python: `scx.to_tsv("sample.scx", "counts.tsv.gz")`.
 R: `to_tsv("sample.scx", "counts.tsv.gz")`.
-Select `matrix="normalized"` or provide cell/feature IDs for a subset.
-Existing output is always refused. See [TSV export](tsv-export.md) for complete
-examples and the sparse-input / single-dense-row memory contract.
+Use `matrix="normalized"` for normalized values. Use IDs to select cells or genes.
+Existing output is refused. See [TSV options and memory needs](tsv-export.md).

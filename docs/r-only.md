@@ -1,15 +1,13 @@
 # Seurat ↔ SCX without Python
 
-R adapter **scxSeurat 0.1.7** performs export, validation, safe publication
-and import entirely in R plus its registered native helpers. No Python process,
-reticulate, NumPy, pandas, SciPy or AnnData installation is required. Python is
-needed separately for AnnData/H5AD conversions.
+scxSeurat 0.1.7 reads, writes, and checks SCX using R and native R helpers.
+It does not need Python, reticulate, NumPy, pandas, SciPy, or AnnData.
+Use Python separately for AnnData and H5AD conversion.
 
-The published `v0.1.0-alpha.5` assets contain R 0.1.3 and retain their original
-Python requirement. Alpha.6 includes the R-only improvement;
-existing release assets and tags have not been replaced.
+Historical alpha.5 includes R 0.1.3, which needs Python.
+R-only use started in alpha.6. Old release files and tags are unchanged.
 
-## Install
+## Install the optional package
 
 In your existing R environment:
 
@@ -19,20 +17,21 @@ library(scxSeurat)
 packageVersion("scxSeurat")  # 0.1.7
 ```
 
-See [installation and binary coverage](install.md). To build from a checkout, use
-`install.packages("adapters/seurat", repos=NULL, type="source")`.
+See [package setup and binary support](package-install.md).
+To build from a checkout, use `install.packages("adapters/seurat", repos=NULL, type="source")`.
 
-Matrix is a dependency of SeuratObject. Existing compatible R dependencies are
-reused. Source installation requires a C toolchain and zlib development files:
-Windows Rtools matching R (Rtools45 for R 4.5); Linux build tools and zlib headers;
-macOS command-line developer tools and zlib. Those tools build the R package;
-they are not Python dependencies. Windows R-only CI also creates an R 4.5 binary
-ZIP in its artifact; the release uses a platform-labelled ZIP, installable with `install.packages("scxSeurat_0.1.7-windows-x86_64.zip",
-repos = NULL, type = "win.binary")` in a compatible Windows R environment.
+Matrix comes with SeuratObject. Compatible installed packages are reused.
+Source builds need a C compiler and zlib development files.
+Use Rtools matching R on Windows, such as Rtools45 for R 4.5.
+Linux needs build tools and zlib headers. macOS needs command-line developer tools and zlib.
+Windows R-only CI also builds an R 4.5 ZIP.
+In a compatible environment, install the release ZIP with
+`install.packages("scxSeurat_0.1.7-windows-x86_64.zip", repos=NULL, type="win.binary")`.
 
-Use `library(scxSeurat)` after installation. Development `source("adapters/seurat/R/scx.R")`
-loads the R support files but still needs the installed native helpers. A lone
-copied R file cannot provide the operating-system rename and gzip guarantees.
+Load the installed package with `library(scxSeurat)`.
+Development `source("adapters/seurat/R/scx.R")` still needs installed native helpers.
+It differs from the generated one-file scx.R, which needs no native SCX package.
+The development file alone cannot provide native rename and gzip checks.
 
 ## Export, validate and import
 
@@ -45,94 +44,84 @@ legacy <- read_scx("result.scx", assay_class = "Assay")
 write_scx(object, "result.scx", overwrite = TRUE)
 ```
 
-Both Assay5 and legacy Assay under SeuratObject >=5 are supported. Exact counts
-are required, normalized is optional, and typed metadata are retained by default. Add `analysis=TRUE` for embeddings
-and cell graphs. Expression is CELL × FEATURE in SCX and
-transposed at the Seurat boundary. Cell graphs remain CELL × CELL.
-Legacy `write_scx_seurat` / `read_scx_seurat` calls with `python = ...`
-continue to work; that argument is ignored.
+Assay5 and legacy Assay are supported under SeuratObject >=5.
+Counts are required. Normalized values are optional. Supported metadata types are kept.
+Add `analysis=TRUE` for embeddings and graphs.
+SCX stores cells x features; the adapter transposes Seurat matrices.
+Cell graphs stay cells x cells. Legacy calls still accept `python=...` but ignore it.
 
 ## Validation and dtype scope
 
-`validate_scx()` checks the **R-readable** SCX profile before export publication
-and before import. It checks versioned manifest structure, required entries,
-unique roles/names/paths, path traversal and escaping symlinks, required files,
-strict UTF-8 TSV headers/widths/IDs, schema structure and JSON scalar types,
-nullability, native integer bounds, float32 exactness, categories/order/codes,
-matrix header/count/index/shape/finite values and embedding cell order.
+`validate_scx()` checks the R-readable subset before a write is published or data are read.
+It checks the manifest version, required rows, unique roles/names/paths, and safe paths and symlinks.
+It also checks UTF-8 tables, headers, row widths, IDs, schema types, missing values,
+integer bounds, exact float32 values, categories and their codes and order.
+Matrix checks cover headers, entry counts, indices, shapes, finite values, and embedding cell order.
 
-Gzip is checked as a stream using zlib before parsing, including complete
-trailers, CRC, concatenated members and trailing garbage. Matrix checks operate
-on sparse stored values, not a dense cell graph. Import retains validated
-resources, so it does not reopen unchecked matrices for assembly.
+Before parsing, zlib checks gzip trailers, CRC, multiple members, and trailing garbage.
+Matrix checks use sparse values. They do not build a dense graph.
+The reader keeps checked resources and uses them to build the object.
 
-Native R limitations are unchanged: wide integer metadata (int64/uint32/uint64),
-INT_MIN and numeric/boolean category labels are rejected explicitly. A dataset
-may therefore pass the general Python validator while being outside R's readable
-subset. Integer Matrix Market values outside ±(2^53−1), including duplicate sums,
-are refused rather than rounded. Sparse dimensions/entry counts must fit R/Matrix
-integer indexing. See [dtype mappings](../compatibility/README.md#dtype-support).
-Duplicate integer groups whose absolute term sum exceeds that range are also
-refused, even if cancellation would yield a small final value; intermediate
-double arithmetic could otherwise silently lose integer precision.
+R rejects int64/uint32/uint64 metadata, INT_MIN, and numeric or boolean category labels.
+Python may accept a file that R cannot read.
+Integer MTX values and duplicate sums must fit within +/-(2^53-1).
+Duplicate groups are also rejected if the sum of absolute terms exceeds that limit,
+even if cancellation would give a small result. This avoids lost integer precision.
+Sparse dimensions and entry counts must fit R/Matrix integer indexing.
+See [type mappings](../compatibility/README.md#dtype-support).
 
 ## Safe publication and recovery
 
-Staging and validation complete before the previous output is moved. An exclusive
-lock file uses the **same destination hash as Python 0.1.0a5**, so cooperating R
-and Python writers recognize each other's locks. The native rename refuses any
-existing destination, even a racing empty directory. There is no unsafe fallback
-to a replacing rename. Directory replacement retains `stage/previous` until
-publication succeeds; errors and interrupts roll back, and failed restoration
-keeps both backup and lock with recovery paths.
-Windows output reparse points, including junctions, are refused using native
-file attributes. Lock keys expand short (8.3) parent paths before hashing, so
-recovery and cross-language locking use the same canonical destination.
+SCX writes and checks the new data before moving the old output.
+R and Python use the same destination hash for their lock files.
+Native rename refuses any existing target, even a folder created during the write.
+There is no fallback that replaces that target.
+Replacement keeps the old output in stage/previous until the new output is published.
+Errors roll back the change. If restore fails, the backup and lock remain, with paths in the error.
+Windows reparse points, including junctions, are refused.
+Lock keys expand short 8.3 parent paths before hashing, so both languages use the same path.
 
-Directory replacement still has a brief name gap. Hard process termination and
-power loss bypass normal cleanup; neither implementation promises durable
-power-loss transactions or network/cloud-sync filesystem semantics. Follow
-[manual recovery](safe-io.md#manual-recovery-after-a-hard-interruption), inspecting
-the lock's `pid`, `output`, `stage` and `backup`. Do not remove another active
-writer's lock or replace an independently created output.
+Folder replacement has a brief gap when the final name is absent.
+A hard process stop or power loss can bypass cleanup.
+There is no power-loss transaction or network/cloud-sync guarantee.
+See [manual recovery](safe-io.md#manual-recovery-after-a-hard-interruption).
+Check pid, output, stage, and backup in the lock.
+Do not remove an active writer's lock or replace an output made by another program.
 
 ## Reproduce checks
 
-After installing 0.1.4, from the repository root:
+After installing the current package, run from the repo root:
 
 ```sh
 Rscript adapters/seurat/scripts/run-tests.R
 Rscript adapters/seurat/scripts/r-only.R .r-tests/my-r-only-run
 ```
 
-The second command uses the installed package, removes Python from PATH and
-blocks both `system()` and `system2()` while testing both assay forms, typed
-metadata, counts, normalized, embedding, asymmetric graph and replacement.
-It writes a small `report.json`; use a fresh output directory each time.
-Windows and Linux CI run both the fault tests and this no-subprocess proof.
+The second command hides Python and blocks `system()` and `system2()`.
+It tests both assay forms, metadata, counts, normalized values, embeddings, graphs, and replacement.
+It writes report.json. Choose a new output folder each time.
+Windows and Linux CI also run failure tests.
 
-Optional Python interoperability checks remain separate:
+To test Python/R conversion separately:
 
 ```sh
 python scripts/check_r_validation.py --output .compat-results/my-native-validation
 python examples/quickstart/verify.py --output quickstart-output-r-native
 ```
 
-These test corruption acceptance, intentional R dtype limits, locks in both
-language directions and Seurat/AnnData round trips. They do not make Python a
-runtime dependency of the R adapter. Historical performance measurements and
-the first alpha's installed-package reports describe their recorded versions;
-they are not measurements of this new R-native validation path.
+These checks test damaged files, R type limits, locks in both directions, and round trips.
+Python is needed for these extra checks, not for the R adapter.
+Historical timings and first-alpha reports apply to their recorded versions.
+They do not measure the newer native R validation path.
 
-For a precomputed single-assay Seurat object saved as RDS:
+To test a saved single-assay Seurat object:
 
 ```sh
 Rscript adapters/seurat/scripts/validate-rds.R /path/to/source.rds .r-tests/my-rds-run
 ```
 
-This also hides Python and blocks subprocesses, verifies exact supported values
-and metadata, and records the source SHA-256. The existing public Seurat PBMC3k
-snapshot (2,700 cells × 13,714 features) passed this path with matrix errors 0
-and exact metadata. It reuses the saved analysis; analysis itself is not rerun.
-The [recorded result](../examples/seurat/r-native-report.json) includes its
-source SHA-256 and dependency versions.
+This command also hides Python and blocks subprocesses.
+It checks values and metadata and records the source SHA-256.
+The saved Seurat PBMC3k object passed with 2700 cells x 13714 features,
+zero matrix error, and exact metadata. It reuses the saved analysis rather than rerunning it.
+The [report](../examples/seurat/r-native-report.json) lists the source hash and dependency versions.

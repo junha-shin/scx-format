@@ -1,8 +1,8 @@
 # Export expression as a matrix TSV
 
-Use the current [no-install scripts](install.md). No new dependencies are needed.
-The TSV is an expression view, not a replacement for SCX metadata/schema or an
-object round-trip format. The SCX format itself is unchanged.
+Use the [no-install files](install.md). No extra dependency is needed.
+TSV shows expression values. It does not keep SCX metadata or replace an SCX round trip.
+The SCX format is unchanged.
 
 ## Same API in Python and R
 
@@ -28,20 +28,18 @@ to_tsv("sample.scx", "selected.tsv.gz", matrix="normalized",
 | `cells` | `None` / `NULL` for all, or a nonempty list/vector of unique cell IDs |
 | `features` | `None` / `NULL` for all, or a nonempty list/vector of unique feature IDs |
 
-Selections use IDs, not numeric positions, so R/Python indexing conventions do
-not differ. Output follows the requested order; unspecified axes retain SCX order.
-Unknown, duplicate or empty selections fail. Use a list/vector even for one ID.
+Select by ID, not position. This avoids Python/R indexing differences.
+The output follows your requested order. Unselected axes keep their SCX order.
+Unknown, duplicate, or empty ID lists fail. Use a list or vector even for one ID.
 
-The first column is `cell_id`, followed by one column per selected feature ID.
-Every selected cell has one row; **all zero values are included**. UTF-8 IDs are
-preserved with ordinary TSV double-quote escaping. R needs a UTF-8 locale for
-non-ASCII IDs, as in the SCX reader; an invalid inherited locale can cause an
-explicit input error. On Windows, `Sys.setlocale("LC_CTYPE", ".UTF-8")` selects
-the native UTF-8 locale. Numeric output uses up to 17
-significant digits; Python integer matrices retain integer values beyond 2^53.
-Native R numeric/integer limitations still apply and unsupported integer MTX
-values are rejected. A feature literally named `cell_id` retains that label;
-interpret the first column by position if this creates duplicate header names.
+The first column is cell_id. Each later column is a selected feature.
+Each selected cell has a row, including all zero values.
+IDs use UTF-8 and normal TSV double-quote escaping.
+R needs a UTF-8 locale for non-ASCII IDs. On Windows, use
+`Sys.setlocale("LC_CTYPE", ".UTF-8")` if needed. An invalid locale may cause an input error.
+Numbers use up to 17 significant digits. Python keeps integer values beyond 2^53.
+R's native limits still apply; unsupported MTX integers are rejected.
+A feature named cell_id keeps that name. If headers repeat, read the first column by position.
 
 ```text
 cell_id geneB geneA
@@ -49,54 +47,49 @@ cell3   0     7
 cell1   2     0
 ```
 
-(The example above is visually spaced; actual fields are separated by tabs.)
+This example uses spaces for display. The file uses tabs.
 
 ## Memory and file size
 
-The exporter never builds a dense CELL × FEATURE array or an AnnData/Seurat
-object. It validates all SCX resources, retains only the selected expression
-matrix, and builds **one selected output row at a time**. Python densifies only
-that row. R converts to CSR and formats stored entries into a zero-filled text
-row, without a numeric dense matrix or dense row. Other expression matrices and
-graphs are validated individually and discarded.
+The exporter does not build a full dense matrix or an AnnData/Seurat object.
+It checks all SCX files and keeps only the selected expression matrix.
+Python makes one selected row dense at a time.
+R converts to CSR and fills a text row from stored entries; it builds no dense numeric row.
+Other matrices and graphs are checked one at a time, then released.
 
-This is not out-of-core MTX parsing or a fixed RAM cap: sparse matrix input,
-metadata and validation still need memory. Peak memory can include the selected
-sparse matrix plus the largest other resource being validated. Row conversion
-and formatting use space proportional to selected feature count, not the total
-output cell × feature count. R CSR conversion can transiently hold both sparse
-layouts (O(nnz)); it does not change the bounded row-buffer contract. Subsets
-reduce output/row-buffer size; they do not
-avoid full SCX input validation. Existing R standalone gzip validation also
-uses scratch disk, as documented in [setup](install.md).
+Input parsing still needs memory for sparse matrices, metadata, and checks.
+There is no fixed RAM limit or out-of-core MTX reader.
+Peak memory may include the selected matrix plus the largest other resource being checked.
+The row buffer grows with selected feature count, not total output size.
+R may briefly keep both sparse layouts during CSR conversion (O(nnz)).
+Subsets reduce output and row-buffer size, but all input is still checked.
+The R file also needs scratch disk for gzip checks. See [setup](install.md).
 
-Dense TSV can be much larger than MTX because it includes zeros. Prefer a small
-selection for inspection and `.tsv.gz` for larger outputs. Allow space for a
-complete staged TSV plus the published file in R; gzip is applied during writing.
+Dense TSV includes zeros and can be much larger than MTX.
+Use a small subset for viewing and .tsv.gz for larger output.
+R needs room for the staged TSV and its final copy. Gzip is applied while writing.
 
 ## Existing files and failures
 
-**Both APIs always refuse an existing output.** There is no overwrite option;
-choose a new path. Writing inside the input SCX directory is also refused.
-Invalid selections, absent normalized data and corrupt inputs produce no output.
+Both APIs refuse existing outputs. There is no overwrite option.
+Choose a new path outside the input SCX folder.
+Bad selections, missing normalized values, and corrupt inputs produce no output.
 
-Python stages the TSV and publishes via exclusive file creation after successful
-writing, retaining its reference locking and cleanup behavior. R stages the TSV,
-then exclusively creates the output and verifies the copied bytes with SHA-256.
-Cooperating writers share the SCX output lock identity. R's final copy is not an
-atomic reader snapshot: wait for successful return before opening the TSV.
-If that copy fails or is killed, a partial file and lock can remain; inspect only
-after the writer stops, rename the partial file and remove the identified lock,
-then retry to a new path. Existing files are never truncated or deleted.
+Python stages the TSV, then creates the output only if the path is free.
+R stages it, creates a new output, copies the data, and checks SHA-256.
+Both use the SCX lock for the destination.
+Wait until the R call succeeds before reading the TSV; its final copy is not atomic.
+A failed or killed copy can leave a partial file and lock.
+After the writer stops, inspect and rename the partial file, remove only its lock,
+and retry to a new path. Existing files are not truncated or deleted.
 
-CI tests counts/normalized, subsets/order, gzip, Unicode/quoted IDs, missing and
-invalid inputs, exact wide Python integers, Python single-row densification, R no-dense sparse rendering, failed
-publication and cross-language TSV agreement. No-install checks run on Linux,
-Windows and macOS. Alpha.7 standalone files and optional Python 0.1.0a7 / R 0.1.6 packages expose
-`to_tsv`. Earlier immutable alpha.6 packages do not.
+CI tests counts, normalized values, subset order, gzip, quoted/Unicode IDs,
+bad input, wide Python integers, row memory use, failed writes, and R/Python agreement.
+No-install checks run on Linux, Windows, and macOS.
+to_tsv is available in alpha.7 and stable releases. Historical alpha.6 packages do not have it.
 
-For real-data equivalence checks and isolated-process time, memory and file-size
-measurements, see the [reproducible PBMC3k TSV example](../examples/tsv-pbmc3k/README.md).
+See the [PBMC3k TSV example](../examples/tsv-pbmc3k/README.md)
+for value checks and time, memory, and file-size measurements.
 
-The [R optimization study](../examples/tsv-pbmc3k/optimization.md) records
-profiling, exact-value/byte checks, speedups and peak-memory tradeoffs on PBMC3k.
+The [R speed study](../examples/tsv-pbmc3k/optimization.md) records profiles,
+exact value/byte checks, speed changes, and peak-memory tradeoffs.

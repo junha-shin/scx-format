@@ -1,31 +1,28 @@
 # First use in your existing environment
 
-Download scx.py or scx.R from the v0.1.0 release into your working directory.
-The quickstarts load PBMC3k (reusing local data when present); substitute your
-own adata or Seurat object after trying the lesson. No SCX installation is needed.
-The [Python notebook](../tutorials/quickstart.ipynb) and [R walkthrough](../tutorials/quickstart.md)
-show input/restored shapes, save/read calls, and a small TSV preview. The detailed lessons retain their pinned alpha.7
-examples for reproducibility.
+Download scx.py or scx.R from v0.1.0 into your working folder.
+Try the [Python notebook](../tutorials/quickstart.ipynb) or [R guide](../tutorials/quickstart.md).
+They load PBMC3k, show matrix sizes, and export a small TSV.
+Then replace the loading step with your own object.
+The detailed examples use fixed alpha.7 files so their checks can be repeated.
 
 | Environment | Existing dependencies | Tested scope |
 |---|---|---|
 | Scanpy / AnnData | Python >=3.10, NumPy >=1.24, pandas >=2, SciPy >=1.11.4, AnnData >=0.11.4 | AnnData 0.11.4, 0.12.3, 0.13.4; Linux, Windows, macOS standalone checks |
 | Seurat | R, SeuratObject >=5, Matrix, jsonlite, digest | R 4.5.2, existing Assay and Assay5; Linux, Windows, macOS standalone checks |
 
-These dependencies must already be present. An arbitrary older Scanpy or Seurat
-installation is not guaranteed to contain compatible versions. SCX never installs
-or upgrades dependencies. Native R SCX helpers and Python are unnecessary for R.
+These packages must already be present. Older environments may not meet the requirements.
+SCX does not install or upgrade packages. R does not need Python or native SCX helpers.
 
 ## Counts choices
 
-Python defaults to raw counts in layers['counts'] and normalized values in X.
-If X contains raw counts, use `write_scx(adata, "sample.scx", counts="X", normalized=None)`.
-If your counts layer has another name, select it explicitly with `counts="raw_counts"`.
-For counts-only objects use `normalized=None`. raw.X is never guessed to be counts.
+Python reads raw counts from `layers['counts']` and normalized values from `X`.
+If `X` holds raw counts, use `write_scx(adata, "sample.scx", counts="X", normalized=None)`.
+Use `counts="raw_counts"` to select a layer with that name.
+Use `normalized=None` for counts only. SCX does not choose `raw.X` for you.
 
-R defaults to counts/data in the active assay. Select a different assay or exact
-layer name explicitly; counts-only objects use `normalized=NULL`. Split Assay5
-layers must be joined explicitly when appropriate for the analysis.
+R uses counts/data in the active assay. Select other exact layer names when needed.
+Use `normalized=NULL` for counts only. Join split Assay5 layers yourself when needed.
 
 ## Common errors
 
@@ -41,15 +38,15 @@ layers must be joined explicitly when appropriate for the analysis.
 
 ## Verification
 
-CI installs only the analysis dependencies, never SCX, for standalone jobs.
-It checks Assay/Assay5 and Python/R conversions on three operating systems;
-installed SCX imports and R subprocess calls are forbidden in standalone checks.
-The quickstart runner executes the exact PBMC3k lessons, checks complete sparse
-counts and axes, verifies dataset hashes, and compares the R/Python TSV preview.
-Standalone and core tests cover missing inputs and output protection. No dependency is installed by
-any lesson or converter. Detailed lessons additionally test metadata, offline
-reruns, corruption checks and ordered subsets.
+Standalone CI installs analysis dependencies but not SCX.
+It tests Assay, Assay5, and both conversion directions on three operating systems.
+The checks block installed SCX imports and R subprocess calls.
+PBMC3k checks compare full sparse counts, axis order, data hashes, and TSV previews.
+Other tests cover bad input and existing output. Detailed examples also check
+metadata, offline reruns, damaged files, and subset order.
+The lessons and converters do not install dependencies.
 
-Run `python scripts/check_tutorials.py --output .compat-results/first-use` in the
-prepared development environment. Reports include both quickstart and detailed
-results. See compatibility/README.md for dtype limits and examples/ for PBMC3k.
+Run `python scripts/check_tutorials.py --output .compat-results/first-use`
+in a prepared test environment. Use a new output path.
+The reports cover quickstart and detailed examples.
+See [type limits](../compatibility/README.md) and [real-data tests](../examples/pbmc3k/README.md).

@@ -1,18 +1,20 @@
 # Use SCX 0.1.0 without installation
 
-Release-specific downloads: [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py), [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R),
-[SHA256SUMS](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/SHA256SUMS), [offline USAGE.md](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/USAGE.md).
-Check SHA-256 before executing; [verification instructions](release-verification.md).
+Download [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py)
+or [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R)
+and [SHA256SUMS](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/SHA256SUMS).
+[Check the hash](release-verification.md) before loading the file.
+An [offline guide](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/USAGE.md) is also available.
 
 
-Use the Scanpy or Seurat environment you already have. No SCX package, compiler,
-Python-from-R bridge or dependency installer is used. Downloaded scripts are
-SCX code, but they are ordinary files rather than installed packages.
+Use your existing Scanpy or Seurat environment.
+You need one SCX file, not an installed SCX package or a compiler.
+The files use your existing dependencies. They do not install packages.
 
 ## Python / Scanpy
 
 Save [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.py)
-next to your script or notebook. In that same environment:
+beside your script or notebook. Then run:
 
 ```python
 import scx
@@ -20,7 +22,7 @@ scx.write_scx(adata, "sample.scx")
 restored = scx.read_scx("sample.scx")
 ```
 
-Or run the file directly:
+You can also run the file from a shell:
 
 ```sh
 python scx.py from-h5ad input.h5ad sample.scx
@@ -28,18 +30,15 @@ python scx.py validate sample.scx
 python scx.py to-h5ad sample.scx restored.h5ad
 ```
 
-Only this one file is needed; the repository and an installed `scx-format` are
-unnecessary. It bundles the reference Python code and imports NumPy, pandas,
-SciPy and AnnData already present in your analysis environment. Tested dependency
-profiles are in [compatibility](../compatibility/README.md): Python >=3.10,
-pandas >=2, SciPy >=1.11.4, NumPy >=1.24 and AnnData >=0.11.4. Older environments
-are not promised to work. Missing dependencies fail; nothing installs itself.
-If another `scx` module is already imported, restart the kernel and put the
-saved file in the notebook directory before importing it.
+The file includes the SCX code. You do not need to clone the repository.
+It needs Python >=3.10, NumPy >=1.24, pandas >=2, SciPy >=1.11.4, and AnnData >=0.11.4.
+See the [tested versions](../compatibility/README.md).
+Older environments may fail. Missing dependencies are not installed for you.
+If another scx module is loaded, restart the kernel and put the saved file beside the notebook.
 
 ## R / Seurat
 
-Save the linked `scx.R` and verify it before sourcing:
+Save scx.R and check its hash before loading it:
 
 ```r
 source("scx.R")
@@ -47,20 +46,19 @@ write_scx(seurat_object, "sample.scx")
 restored <- read_scx("sample.scx")
 ```
 
-For offline/repeated use, save [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R)
-once and use `source("scx.R")`. No other repository files are needed. This uses
-SeuratObject >=5, Matrix, jsonlite and digest from the existing Seurat environment.
-If any are absent the script names them and stops; it never installs or upgrades
-packages. `scxSeurat`, Python, reticulate and compiled SCX helpers are unnecessary.
-The same Assay and Assay5 forms and native R metadata limits apply.
+Save [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0/scx.R)
+once, then use `source("scx.R")` offline.
+It needs SeuratObject >=5, Matrix, jsonlite, and digest.
+If a package is missing, the file names it and stops. It does not install or upgrade packages.
+You do not need scxSeurat, Python, reticulate, or compiled SCX helpers.
+Assay and Assay5 are supported. Native R type limits still apply.
 
 ## Shared default and safety
 
-`write_scx(object, path)` writes counts, optional normalized expression and typed
-cell/feature metadata. `analysis=True` (R: `analysis=TRUE`; CLI: `--analysis`)
-adds embeddings/cell graphs. Counts are required; CELL × FEATURE orientation,
-canonical axis order and supported metadata types are validated on read/write.
-See [usage examples](getting-started.md).
+`write_scx(object, path)` writes counts, optional normalized values, and typed cell/feature metadata.
+Add `analysis=True` (R: `analysis=TRUE`; CLI: `--analysis`) for embeddings and cell graphs.
+Counts are required. Reads and writes check types, IDs, order, and cells x features shape.
+See [examples](getting-started.md).
 
 | Guarantee / behavior | Python file | R source file |
 |---|---|---|
@@ -71,37 +69,32 @@ See [usage examples](getting-started.md).
 | Explicit replacement with rollback | `overwrite=True` | Optional installed package only |
 | Concurrent cooperating writers | Shared exclusive lock | Same lock identity as Python/package |
 
-R streams each gzip member to temporary scratch disk to verify CRC without a
-compiler. Budget space for the staged dataset, its copy and the largest
-uncompressed gzip resource. It rejects ordinary concatenated gzip files; use
-single-member files written by SCX. Native package validation remains faster and
-supports the wider gzip profile. Scripts target ordinary local filesystems;
-network/cloud-sync filesystems and hostile concurrent filesystem modification
-are not certified.
+R uses temporary disk space to check gzip CRC and length without a compiler.
+Allow room for staging, a copied dataset, and the largest uncompressed resource.
+The R file accepts single-member gzip files, such as SCX writes.
+It rejects concatenated gzip files. The native R package supports more gzip forms and is faster.
+Use ordinary local storage. Network drives, cloud sync, and changes by other programs are not certified.
 
-If R stops during publication, its incomplete folder has no `manifest.tsv` and
-cannot be imported. Its lock is retained. After confirming the writer stopped,
-inspect/rename the partial folder and remove only the identified lock, then write
-to a fresh destination. A stop just after manifest publication can leave a valid
-folder plus a lock: validate before recovery. No existing dataset is moved or
-deleted. See also [safe I/O](safe-io.md).
+If R stops before writing manifest.tsv, the partial folder cannot be read.
+Its lock remains. Confirm the writer has stopped, then inspect or rename the partial folder.
+Remove only that lock and retry to a new path.
+If R stops just after writing the manifest, the folder may be valid. Check it first.
+No existing dataset is moved or deleted. See [safe writes](safe-io.md).
 
 ## Reproducibility and optional packages
 
-The links above are pinned to v0.1.0. Save the file and its checksum
-with your workflow. Both scripts expose `SCX_VERSION` equal to that tag. Never
-silently refresh a script in a reproducible analysis. The two bundled scripts
-are generated from checked-in sources; CI tests canonical staged release files,
-checks version agreement, and rejects stale or modified bytes.
+These links point to v0.1.0. Keep the file and checksum with your analysis.
+Both files expose that tag as `SCX_VERSION`.
+Do not silently replace a file in a saved analysis.
+CI checks the generated files, versions, and exact release bytes.
 
-Package installation is [optional](package-install.md): useful for an installed
-CLI, reusable imports, or R's faster native validator and staged replacement.
-Alpha.7 includes optional Python 0.1.0 / R 0.1.6 packages. Their native R
-validator and replacement support are separate from the no-install files.
-Previous alpha.6 assets are unchanged.
+[Packages are optional](package-install.md).
+Use them for an installed CLI, reusable imports, or faster native R checks and replacement.
+The stable release has Python package 0.1.0 and R package 0.1.7.
+The R package's native checks and replacement differ from the no-install R file.
+Historical release files are unchanged.
 
 ## Ordinary TSV output
 
-The same downloaded files also expose `to_tsv()` for counts/normalized expression,
-ID-selected cells/features and `.tsv.gz`. No additional dependency or installation
-is required. See [matrix TSV export](tsv-export.md) for memory and safety limits.
+The same files provide `to_tsv()` for counts, normalized values, ID subsets, and .tsv.gz.
+No extra dependency is needed. See [TSV options and limits](tsv-export.md).

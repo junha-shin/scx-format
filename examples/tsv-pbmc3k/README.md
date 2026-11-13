@@ -1,4 +1,7 @@
-# PBMC3k: R/Python matrix TSV equivalence and performance
+# PBMC3k TSV checks and speed
+
+Check that Python and R write the same expression values. Then measure time,
+memory, and file size. These steps need no SCX package install.
 
 This example uses the same public 10x PBMC3k hg19 archive as the existing
 [Seurat real-data example](../seurat/README.md). It measures the current
@@ -7,7 +10,7 @@ This example uses the same public 10x PBMC3k hg19 archive as the existing
 The archive SHA-256 is
 `847d6ebd9a1ec9a768f2be7e40ca42cbfe75ebeb6d76a4c24167041699dc28b5`.
 Preparation reads named archive members without extracting filesystem paths,
-retains genes detected in at least three cells, and uses Ensembl feature IDs.
+keeps genes detected in at least three cells, and uses Ensembl feature IDs.
 The result is **2,700 cells x 13,714 features**, **2,282,976 nonzero counts**.
 Normalized expression is float64 `log1p(counts / filtered-cell total * 10000)`.
 Both exporters receive this exact same expression-only SCX directory. This is
@@ -16,13 +19,14 @@ an export/transport test, not a comparison of Scanpy and Seurat analysis methods
 ## Current R optimization
 
 [Before/after performance, memory and safety](optimization.md). Full R outputs
-are about 3.6-4.1x faster on this PBMC3k input; output values and sizes are
+are about 3.6-4.1x faster on this PBMC3k input.
+output values and sizes are
 unchanged. Small subset validation remains the time floor. The report includes
-the small observed peak-memory increases rather than claiming memory savings.
+The small measured peak-memory increases instead of claiming memory savings.
 
 ## Recorded baseline real-data results
 
-[Measured results and interpretation](results.md) | [all observations and hashes](results.json).
+[Measured results and interpretation](results.md) | [all measurements and hashes](results.json).
 Counts and normalized matched exactly in both repeats, including all zeros and
 requested subset order. The results are local Windows measurements; CI smoke
 checks are separately described below.
@@ -31,7 +35,7 @@ checks are separately described below.
 
 From a checkout, use your existing AnnData/scverse and Seurat environments.
 The measurement controller needs `psutil` (`pip install psutil` only if absent).
-There is no SCX installation. R reuses SeuratObject, Matrix, jsonlite and digest;
+There is no SCX installation. R reuses SeuratObject, Matrix, jsonlite and digest.
 set `R_LIBS_USER` if those packages live in a custom library. The R worker uses
 `--vanilla` and does not read an R profile.
 
@@ -46,32 +50,38 @@ python examples/tsv-pbmc3k/benchmark.py run --input benchmarks/work/tsv-pbmc3k/i
 Use a fresh output directory. On Windows, `--rscript` can be the full path to
 `Rscript.exe`, including spaces. Preparation refuses a wrong archive checksum.
 Work files, input SCX, TSVs and worker logs remain under ignored
-`benchmarks/work/`; no downloaded expression data are committed. The public
-dataset retains its upstream terms; MIT covers this repository's code.
+`benchmarks/work/`.
+No downloaded expression data are committed. The public
+dataset keeps its upstream terms; MIT covers this repository's code.
 
 The runner writes `report.json` and `summary.md`. A worker or numeric/axis check
 failure stops the run without a success report. Raw logs can contain local
-paths; they are not part of the checked-in results.
+paths.
+They are not part of the checked-in results.
 
 ## What is compared
 
 For **counts and normalized**, each engine writes full `.tsv`, full `.tsv.gz`,
-and an ID-selected `.tsv.gz`. The subset uses up to 100 evenly spaced cells and
+And an ID-selected `.tsv.gz`. The subset uses up to 100 evenly spaced cells and
 200 evenly spaced features, then reverses both axes to exercise requested order.
-Exact IDs are retained in each run's case configuration and report.
+Exact IDs are kept in each run's case configuration and report.
 
 Every output header, cell ID, row/column count and numeric field is checked
 against the original sparse SCX matrix, including every zero. R and Python are
-also compared directly. Counts must match exactly; normalized values have an
-absolute tolerance of `1e-12`. TSVs are read one row at a time; comparisons do not
+also compared directly. Counts must match exactly.
+Normalized values have an
+absolute tolerance of `1e-12`. TSVs are read one row at a time.
+comparisons do not
 build a full dense matrix. Gzip and platform newline/float-format differences
 can produce different file hashes despite equivalent tables.
 
 ## Measurement contract
 
 Each export runs in its own fresh process, sequentially. Two repeats reverse
-R/Python order on the second repeat. Summary time is the median; memory is the
-maximum recorded peak across repeats; every observation remains in JSON.
+R/Python order on the second repeat. Summary time is the median.
+memory is the
+maximum recorded peak across repeats.
+every observation remains in JSON.
 
 - **Wall time** includes process startup, code imports / R source, complete SCX
   validation, expression export, compression and protected publication.
@@ -82,22 +92,27 @@ maximum recorded peak across repeats; every observation remains in JSON.
   Concurrent process-tree sampled RSS is also recorded. It is not Python/R heap
   size or total system RAM. Very short processes/startup/exit transients can be
   missed by polling.
-- **Linux/macOS memory** is process-tree RSS sampled every 10 ms, an observed
-  lower bound rather than a guaranteed OS high-water value.
+- **Linux/macOS memory** is process-tree RSS sampled every 10 ms, an measured
+  lower bound instead of a guaranteed OS high-water value.
 - Requested BLAS/OpenMP threads are one; SciPy Matrix Market threading remains
-  automatic. Default API gzip settings are retained and recorded (Python 9,
-  R 6); the compression settings are not controlled to be identical.
+  automatic. Default API gzip settings are kept and recorded (Python 9,
+  R 6).
+The compression settings are not controlled to be identical.
 - The source is read by the controller before timing and the OS cache is not
   reset. These are warm-cache local measurements. Disk, background load and
-  runtime/library versions affect results; two repeats are not a broad hardware
+  runtime/library versions affect results.
+two repeats are not a broad hardware
   or statistical performance qualification.
 
 The exporters keep input sparse and build one output row. Python densifies one
-row; optimized R formats stored CSR entries into a zero-filled text row. Full input
-validation still loads sparse resources; subset export therefore does not imply
+row.
+optimized R formats stored CSR entries into a zero-filled text row. Full input
+validation still loads sparse resources.
+subset export therefore does not imply
 subset-sized input memory. R also uses scratch disk for CRC validation and
 stages/copies output. Full dense TSV writes zeros and can be much larger than
-MTX; allow space for both engines and both repeats.
+MTX.
+allow space for both engines and both repeats.
 
 ## CI and tests
 
@@ -118,8 +133,8 @@ limited-densification and adapter tests remain in CI.
 
 `profile.R` is a separate diagnostic run with Rprof and elapsed-time wrappers.
 It measures input validation, row extraction/densification, number formatting
-and writing, and saves top inclusive/self samples. Sampling/wrapper times are
-not additive and are not used as performance benchmark observations.
+And writing, and saves top inclusive/self samples. Sampling/wrapper times are
+not additive and are not used as performance benchmark measurements.
 
 ```sh
 Rscript examples/tsv-pbmc3k/profile.R standalone/scx.R benchmarks/work/tsv-pbmc3k/input.scx benchmarks/work/profile.tsv benchmarks/work/profile
@@ -133,4 +148,5 @@ Use new output paths for every diagnostic and benchmark run. The comparator
 refuses changed input hashes, axes/selections, methods, R versions/dependencies
 or gzip defaults, and checks uncompressed R TSV hashes against the baseline.
 Historical baseline and optimized measurements are separate sessions on the
-same machine; cache and background load are not reset or controlled.
+same machine.
+cache and background load are not reset or controlled.

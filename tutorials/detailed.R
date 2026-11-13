@@ -1,9 +1,8 @@
-# SCX in five minutes — R / Seurat
-# Open this file in RStudio. Run each numbered section with Ctrl/Cmd+Enter,
-# or source the whole file. It creates the same 3-cell x 4-feature counts as
-# detailed.ipynb. No SCX, Python, IRkernel, compiler or package installation.
-# A complete rerun creates fresh outputs; old runs are never deleted.
-# Rerunning only a write section deliberately refuses an existing output.
+# SCX detailed example - R / Seurat
+# Open in RStudio and run each section, or source the whole file.
+# It uses the same small data as detailed.ipynb. No SCX or Python install is needed.
+# Full reruns make fresh output folders. Earlier results are kept.
+# A repeated write step refuses existing output.
 
 # 1. Check your existing Seurat environment ----
 tutorial_needed <- c("SeuratObject", "Matrix", "jsonlite", "digest")
@@ -12,11 +11,11 @@ if (length(tutorial_missing)) stop("Choose your Seurat environment; missing: ", 
 if (packageVersion("SeuratObject") < "5.0.0") stop("This lesson needs SeuratObject >=5.")
 cat("Ready: existing SeuratObject / Matrix / jsonlite / digest. No packages installed.\n")
 
-# 2. Fetch and verify alpha.7; create fresh outputs ----
-# First run needs internet. For offline use, put scx.R and SHA256SUMS from the
-# pinned alpha.7 release in scx-tutorial/files/ under your working folder.
-# Existing cached files are checked, not silently replaced. A mismatch stops
-# before source(); inspect the cache and download the pinned file again.
+# 2. Download and check alpha.7 files ----
+# First use needs internet. For offline use, copy alpha.7 scx.R and SHA256SUMS
+# into scx-tutorial/files/ under your working folder.
+# Cached files are checked before source(). A bad hash stops the example.
+# Inspect the cache and get the exact release file again. It is not replaced for you.
 tutorial_release <- "v0.1.0-alpha.7"
 tutorial_base <- paste0("https://github.com/junha-shin/scx-format/releases/download/",tutorial_release,"/")
 tutorial_hashes <- c(
@@ -56,16 +55,16 @@ run_dir <- tempfile("run-",tmpdir=tutorial_output)
 if (!dir.create(run_dir)) stop("Could not create a fresh run directory.")
 cat("Verified alpha.7 bytes. Created a fresh run-* folder under scx-tutorial/output/.\n")
 
-# 3. Load the verified file ----
+# 3. Load the checked file ----
 source(tutorial_script,local=environment())
 stopifnot(SCX_VERSION==tutorial_release)
 cat("Loaded ",SCX_VERSION," from the verified file.\n",sep="")
 
-# 4. Create small, inspectable data ----
-# Seurat stores FEATURE x CELL; SCX/TSV use CELL x FEATURE. The transpose printed
-# here is only a tiny 12-value display; do not densify your real data for SCX.
-# Normalized data are simply log1p(counts) for this transport lesson, not a
-# biological preprocessing recommendation. Seurat adds QC metadata too.
+# 4. Make small data ----
+# Seurat uses features x cells. SCX and TSV use cells x features.
+# Only this tiny display is dense. Keep real datasets sparse.
+# Normalized values are log1p(counts) for this example, not a biological analysis.
+# Seurat also adds QC metadata.
 demo_counts <- Matrix::Matrix(matrix(c(1,0,3,0, 0,2,0,4, 5,1,0,0),nrow=4,ncol=3),sparse=TRUE)
 dimnames(demo_counts) <- list(c("geneA","geneB","geneC","geneD"),c("cell1","cell2","cell3"))
 demo <- SeuratObject::CreateSeuratObject(SeuratObject::CreateAssay5Object(counts=demo_counts),project="SCXdemo")
@@ -79,10 +78,9 @@ cat("Expected: 3 cells x 4 features, displayed CELL x FEATURE\n")
 print(as.matrix(Matrix::t(demo_counts)))
 print(demo[[]][,c("sample_number","flag","group")])
 
-# 5. Write SCX, read it back and check success ----
-# Defaults select counts/data in the active assay. Validation is automatic.
-# This demo has no embeddings/graphs. Use analysis=TRUE when you intentionally
-# want supported coordinates/graphs from your real object.
+# 5. Save, read, and check ----
+# Defaults use counts/data in the active assay. SCX checks data automatically.
+# This example has no embeddings or graphs. Use analysis=TRUE to include them.
 scx_dir <- file.path(run_dir,"demo.scx")
 write_scx(demo,scx_dir)
 restored <- read_scx(scx_dir)
@@ -93,9 +91,9 @@ stopifnot(normalized_error<=1e-12,identical(demo[[]],restored[[]]),
   identical(demo[["RNA"]][[]],restored[["RNA"]][[]]))
 cat("PASS: counts, normalized expression, both axes and typed metadata preserved.\n")
 print(restored[[]][,c("sample_number","flag","group")])
-# Use object[[]] for metadata: Seurat's $ accessor can drop ordered-factor class.
+# Read metadata with object[[]]. Seurat's $ can drop the ordered-factor class.
 
-# 6. View ordinary TSV and compressed normalized TSV ----
+# 6. View counts TSV and compressed normalized TSV ----
 counts_tsv <- file.path(run_dir,"counts.tsv")
 normalized_tsv <- file.path(run_dir,"normalized.tsv.gz")
 to_tsv(scx_dir,counts_tsv)
@@ -111,8 +109,8 @@ stopifnot(identical(counts_table$cell_id,colnames(demo_counts)),
 print(counts_table)
 print(normalized_table)
 
-# 7. Select actual IDs, including a changed order ----
-# Expect cell3,cell1 by geneB,geneA: rows [1,5] and [0,1].
+# 7. Select and order IDs ----
+# Expect cell3,cell1 by geneB,geneA: [1,5] and [0,1].
 selected_cells <- c("cell3","cell1")
 selected_features <- c("geneB","geneA")
 subset_tsv <- file.path(run_dir,"subset.tsv.gz")
@@ -125,19 +123,19 @@ stopifnot(identical(subset_table$cell_id,selected_cells),
   max(abs(as.matrix(subset_table[-1])-matrix(c(1,0,5,1),nrow=2)))==0)
 print(subset_table)
 
-# 8. Observe overwrite protection without losing data ----
+# 8. Check existing output protection ----
 previous_hash <- digest::digest(counts_tsv,file=TRUE,algo="sha256")
 refusal <- tryCatch({to_tsv(scx_dir,counts_tsv);NULL},error=conditionMessage)
 stopifnot(!is.null(refusal),grepl("already exists",refusal,fixed=TRUE),
   digest::digest(counts_tsv,file=TRUE,algo="sha256")==previous_hash)
 cat("Expected refusal: counts.tsv already exists; its bytes are preserved.\n")
-# Standalone R never replaces an existing SCX directory; overwrite=TRUE is
-# refused. Rerun section 2 or the whole lesson for new paths. Nothing is deleted.
+# The R file refuses existing SCX folders and overwrite=TRUE.
+# Run section 2 or the whole example for a new folder. Old results are kept.
 
-# 9. Optional: use your own RDS (leave FALSE on the first run) ----
-# Substitute your real path. Counts must be raw counts; normalized is optional.
-# Inspect exact layer names. Join split layers explicitly with JoinLayers before
-# export when necessary; SCX does not guess how to combine them.
+# 9. Try your own RDS (leave FALSE on the first run) ----
+# Set the real path and raw-count layer. Normalized values are optional.
+# Check exact layer names. Join split layers with JoinLayers when needed.
+# SCX does not choose how to combine layers.
 use_own_data <- FALSE
 input_rds <- "my-object.rds"
 counts_layer <- "counts"
@@ -154,14 +152,13 @@ if (use_own_data) {
     cells=head(colnames(own_restored),10),features=head(rownames(own_restored),10))
 } else cat("Own-data example skipped. Enable it only when your path/layers are ready.\n")
 
-# Success and next steps ----
+# Results and next steps ----
 tutorial_result <- list(passed=TRUE,SCX_VERSION=SCX_VERSION,shape=c(3L,4L),
   counts_equal=TRUE,normalized_max_absolute_error=normalized_error,
   typed_metadata_equal=TRUE,TSV_equal=TRUE,subset_order_equal=TRUE,existing_output_preserved=TRUE)
 cat("SUCCESS: all demo checks passed. No SCX package was installed.\nFiles in this run:\n")
 print(list.files(run_dir,recursive=TRUE))
-# Your outputs remain in scx-tutorial/output/run-*. First column of every TSV
-# is cell_id. Real TSVs can be large: use subsets and gzip. Validation still
-# needs sparse input memory. Keep original analysis objects and do not treat
-# expression TSV as a metadata-preserving object interchange format.
+# Results stay in scx-tutorial/output/run-*. The first TSV column is cell_id.
+# Use subsets and gzip for large TSVs. Sparse input checks still need memory.
+# TSV does not keep all metadata. Keep the original analysis object.
 # More: https://github.com/junha-shin/scx-format/blob/main/docs/tsv-export.md

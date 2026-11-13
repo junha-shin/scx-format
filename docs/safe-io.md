@@ -2,32 +2,29 @@
 
 ## Standalone scripts
 
-The no-install Python script uses the reference Python safety implementation.
-The R source file supports **new outputs only**, not replacement/rollback.
-It reserves a new directory with `dir.create`, verifies each copied staged file
-with SHA-256, and publishes `manifest.tsv` last. Before that point readers reject
-the incomplete directory. Copy failure/interruption retains the incomplete
-folder and shared lock; inspect after the writer stops and use a fresh path.
-R checks single-member gzip CRC and length using scratch disk. These are basic
-safety guarantees, not the native package's no-replace directory rename or its
-full gzip profile. See [the standalone safety table](install.md#shared-default-and-safety).
-The replacement/native-helper details below describe the installed packages.
+The Python file uses the Python safety code.
+The R file writes new outputs only. It cannot replace or roll back a folder.
+It reserves a new folder, checks copied files with SHA-256, then writes manifest.tsv last.
+Readers reject the folder before that point.
+A failed or interrupted copy leaves a partial folder and lock. Inspect them only after the writer stops.
+R uses scratch disk to check single-member gzip CRC and length.
+The native package supports more gzip forms and native no-replace folder rename.
+See [safety differences](install.md#shared-default-and-safety).
+The replacement steps below apply to Python and the optional native R package.
 
 
-Current main's **R adapter 0.1.4** now implements validation and publication
-without Python, using compiled R helpers. See [R-only operation](r-only.md) for
-its installation, validation subset and tests. It shares Python's lock identity,
-backup layout and no-replace publication contract. The version-specific Python
-requirement below describes the original R 0.1.3 / alpha.5 release.
+The current R package checks and publishes data without Python, using native helpers.
+It shares Python's lock identity, backup layout, and no-replace behavior.
+See [R-only use](r-only.md). The older Python requirement applied to R 0.1.3 in alpha.5.
 
-Available in Python 0.1.0a5 and scxSeurat 0.1.3. The on-disk format and CELL ×
-FEATURE orientation are unchanged. This applies to `from_anndata`, `write_h5ad`,
-the conversion CLI and `write_scx_seurat`. Core `write_table`, `write_matrix`
-and `write_manifest` are low-level building blocks; callers must stage them.
+The safety work started in Python 0.1.0a5 and scxSeurat 0.1.3.
+The format and cells x features layout did not change.
+It covers from_anndata, write_h5ad, the CLI, and write_scx_seurat.
+Low-level write_table, write_matrix, and write_manifest do not stage output for callers.
 
 ## Normal use
 
-Existing outputs are refused unless replacement is explicit:
+Existing output is refused unless you request replacement:
 
 ```sh
 scx from-h5ad input.h5ad result.scx --overwrite
@@ -46,71 +43,67 @@ write_scx_seurat(object, "result.scx", overwrite = TRUE,
                  python = "/path/to/python")
 ```
 
-Seurat export now requires Python with **scx-format >= 0.1.0a5** installed,
-including when no overwrite is requested. This enables full Python validation
-and the shared publication code. Import retains its existing Python requirement.
-Pass the interpreter explicitly if it is not on PATH.
+The python argument above is kept for old calls and ignored by the current R package.
+Only historical R 0.1.3 required Python with scx-format >=0.1.0a5 for validated reads and writes.
+Current R use does not need a Python interpreter.
 
-The destination type must match: SCX is a directory, H5AD a regular file.
-Output symlinks, including dangling links, are refused. Directory replacement
-requires a readable v0.1-alpha manifest with valid required entries; unrelated
-folders are not recursively replaced. Other file types are refused. H5AD output
-from the CLI must be outside its input SCX directory. `--overwrite` replaces the
-whole output, including unlisted files in an SCX directory; save personal files
-elsewhere. It does not merge datasets.
+SCX output must be a folder; H5AD output must be a regular file.
+Symlinks, including broken ones, and other file types are refused.
+Folder replacement needs a readable 0.1-alpha manifest with valid required entries.
+It cannot replace an unrelated folder.
+CLI H5AD output must be outside the input SCX folder.
+Overwrite replaces the whole output, including unlisted files. It does not merge datasets.
+Keep personal files elsewhere.
 
 ## Publication and failures
 
-1. An exclusive `.scx-lock-<hash>` next to the output prevents cooperating SCX
-   writers from publishing to the same resolved destination concurrently.
-2. Files are written under a private sibling `.scx-stage-<random>/payload` on
-   the destination filesystem. The existing output stays in place during writing
-   and validation. SCX runs the complete validator; H5AD uses AnnData's backed
-   reader to check readability, shape and cell/feature IDs after writing.
-   This H5AD check may read metadata, layers, embeddings and graphs again; it
-   is not a byte checksum or a second independent comparison of all values.
-3. New outputs use create-if-absent operations, including a no-replace directory
-   rename. A racing destination, even an empty directory, is preserved. Existing
-   H5AD files use a same-filesystem atomic replacement. Existing SCX directories
-   are moved to `stage/previous`, then the validated payload takes their name.
-4. If directory publication raises an exception, the old directory is restored.
-   If restoration also fails, `previous` and the lock are retained and the error
-   gives their paths. Successfully published outputs and restored old outputs
-   remain intact; normal staging files and locks are removed.
+1. A .scx-lock-<hash> file beside the output gives one SCX writer control of that path.
+2. New data are written in a private sibling .scx-stage-<random>/payload folder.
+   The old output stays in place while the new data are written and checked.
+   SCX runs the full validator. H5AD is reopened with AnnData's backed reader
+   to check readability, shape, and cell/feature IDs.
+   This may reread metadata, layers, embeddings, and graphs.
+   It is not a checksum or an independent check of every value.
+3. New output is created only if its path is free. A racing target, even an
+   empty folder, is kept. Existing H5AD uses same-filesystem atomic replacement.
+   Existing SCX is moved to stage/previous; the checked payload takes its name.
+4. If folder publication fails, SCX restores the old folder.
+   If restore also fails, it keeps previous and the lock and reports their paths.
+   On success or successful rollback, normal staging files and locks are removed.
 
-An SCX directory replacement has a brief interval when its final name is absent.
-Pause readers during replacement, or use a new versioned destination. Locks only
-coordinate SCX writers; unrelated programs can still modify paths. There is no
-general concurrent-reader snapshot or distributed/network-filesystem guarantee.
+Replacing an SCX folder leaves a brief gap when its final name is absent.
+Pause readers or write to a new versioned path.
+Locks coordinate SCX writers only. Other programs can still change files.
+There is no concurrent-reader snapshot or network-filesystem guarantee.
 
-Staging requires free space for the new output while keeping the old one. Moving
-the old directory to `previous` does not copy it. Extra H5AD verification adds
-I/O and can increase memory. Historical benchmarks under `benchmarks/results`
-describe 0.1.0a4/0.1.2; they are not measurements of this additional safety gate.
+Keep enough free space for the new data and old output.
+Moving the old folder to previous does not copy it.
+H5AD read-back adds I/O and may use more memory.
+Historical benchmark results describe 0.1.0a4/0.1.2 and do not measure this safety step.
 
-Regular Python exceptions and Ctrl-C clean staging or roll back. SIGKILL,
-`os._exit`, ending the process in Task Manager, host failure and power loss bypass
-cleanup. SCX does not promise durable transactions after power loss: file/directory
-data are not all fsynced, and stale locks are never removed automatically.
+Normal Python exceptions and Ctrl-C clean up staging or roll back.
+SIGKILL, os._exit, Task Manager termination, system failure, and power loss bypass cleanup.
+Not all files and folders are fsynced. There is no durable power-loss transaction.
+Stale locks are never removed automatically.
 
 ## Manual recovery after a hard interruption
 
-1. Stop writers and confirm that the PID in the lock is no longer running this
-   conversion (PIDs can be reused). Read its JSON: `output`, `stage` and `backup`
-   are absolute paths. An empty lock can mean interruption before staging began.
-2. If the output exists, validate it (`scx validate` for a directory; reopen an
-   H5AD with AnnData). Keep any `previous` backup until the chosen output is
-   confirmed. A `payload` may be incomplete; never assume it is a finished output.
-3. If output is absent and `stage/previous` exists, validate that backup and move
-   it back to the exact output path only when that path is still absent. Do not
-   overwrite an independently created output. If neither exists, preserve any
-   artifacts needed for diagnosis and rerun from the original source to a new path.
-4. Once the selected output is verified, remove only the identified abandoned
-   stage and its lock. Never bulk-delete `.scx-*` paths while a writer is active.
+1. Stop writers. Check that the lock's PID is no longer running this conversion;
+   PIDs can be reused. Read output, stage, and backup from the lock JSON.
+   They are absolute paths. An empty lock may mean staging had not started.
+2. If output exists, check it with scx validate or reopen H5AD with AnnData.
+   Keep previous until you have checked the chosen output.
+   A payload may be incomplete; do not assume it is ready.
+3. If output is absent and stage/previous exists, check the backup first.
+   Move it back only if the output path is still absent.
+   Do not overwrite a file made by another program.
+   If neither exists, keep useful evidence and rerun from the source to a new path.
+4. After checking the chosen output, remove only its abandoned stage and lock.
+   Never bulk-delete .scx-* paths while a writer is active.
 
-R may also leave its outer `.scx-<random>` staging directory after a hard exit
-before Python publication begins. It contains no previous output; preserve the
-original and inspect/validate the stage before deciding to remove it.
+A hard R exit may also leave an outer .scx-<random> staging folder.
+In the old Python-based path, this could happen before publication began.
+It contains no previous output. Keep the source and inspect the stage before removing it.
 
 ## Errors and checks
 
@@ -126,26 +119,25 @@ original and inspect/validate the stage before deciding to remove it.
 | no space left | Free space for staging; the previous output is retained. |
 | rollback failed | Keep `previous` and the lock; recover manually using the error's paths. |
 
-Expected CLI failures exit 1 with a file/reason and an action; Ctrl-C exits 130.
-Parser/usage errors exit 2. Python APIs continue to raise exceptions. The validator
-checks the entire gzip stream including its trailer. It does not authenticate
-inputs or detect every syntactically valid numerical alteration without checksums.
+Expected CLI failures exit 1 with the file, reason, and an action.
+Ctrl-C exits 130; usage errors exit 2. Python APIs raise exceptions.
+Gzip checks include the full stream and trailer.
+Validation does not authenticate input or detect every valid-looking value change without hashes.
 
-CI covers fault-injected disk-full, permission, interruption, publish/rollback
-failure, writer races, actual subprocess hard exit, corrupt gzip/UTF-8/TSV/MTX/
-manifest/schema, and preservation of previous files. Linux and Windows exercise
-their native publication paths. Directory rename uses Linux `renameat2` or Windows
-rename; macOS has an unverified `renamex_np` implementation. Unsupported systems
-or filesystems fail rather than falling back to a replacing rename. File creation
-requires same-filesystem hard-link support. Local-filesystem tests do not certify
-NFS, SMB, cloud sync folders or power-loss recovery.
+CI injects disk-full, permission, interruption, publish, rollback, and race failures.
+It also tests hard exits and damaged gzip, UTF-8, TSV, MTX, manifest, and schema files.
+Previous output must be kept. Linux and Windows exercise native write paths.
+macOS has a renamex_np path; the earlier stabilization report did not verify it.
+Unsupported systems fail instead of using an unsafe replacing rename.
+File creation needs same-filesystem hard links.
+Local tests do not certify NFS, SMB, cloud sync, or power-loss recovery.
 
 ## Alpha stabilization validation
 
-Local Windows 11 / Python 3.12.14 / AnnData 0.13.4 verification for this change:
-84 Python cases passed; two symlink cases skipped because the account cannot
-create Windows symlinks. R 4.5.2 / SeuratObject 5.4.0 passed all 45 assertions.
-The full Python suite, including the symlink cases, also runs on Linux CI.
+The original stabilization check used Windows 11, Python 3.12.14, and AnnData 0.13.4.
+It passed 84 Python cases; two symlink cases were skipped because the account lacked permission.
+R 4.5.2 / SeuratObject 5.4.0 passed 45 assertions.
+These are historical counts. The full Python suite also runs on Linux CI.
 
 ```sh
 pip install -e '.[test]' -r compatibility/anndata-0.13.4.txt
@@ -153,17 +145,16 @@ pytest -q
 Rscript adapters/seurat/scripts/run-tests.R
 ```
 
-Previously generated real-data inputs from the linked examples were reused;
-biological analysis was not rerun. New SCX and H5AD outputs were created and then
-explicitly replaced using this version's writers:
+The checks reused saved real-data inputs. They did not rerun biological analysis.
+They created, then replaced, SCX and H5AD outputs with that version's writers:
 
 | Source | Cells × features | Replacement / round trip |
 |---|---:|---|
 | [Scanpy PBMC3k typed input](../examples/pbmc3k/README.md) | 2,700 × 13,714 | SCX and H5AD replacement passed; supported matrix errors 0 |
 | [Seurat PBMC3k saved source object](../examples/seurat/README.md) | 2,700 × 13,714 | R export/replacement and SCX/H5AD replacement passed; supported matrix errors 0 |
 
-Counts, normalized values, every embedding and cell graph, axis order and
-metadata were compared. SCX metadata matched exact dtypes. H5AD retains its
-documented transport behavior: nullable text becomes `string`, and AnnData may
-infer `str` storage for textual category labels while preserving values, order
-and unused categories. See [dtype support](../compatibility/README.md#dtype-support).
+The checks compared counts, normalized values, embeddings, graphs, axes, and metadata.
+SCX kept exact metadata types.
+H5AD may turn nullable text into string and infer different storage for text category labels.
+Values, order, missing values, and unused categories remain intact.
+See [type support](../compatibility/README.md#dtype-support).

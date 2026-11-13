@@ -1,13 +1,18 @@
-# Scaling benchmark and bottleneck fixes
+# Scaling benchmark
+
+This guide measures conversion time, memory, and file size as cell count grows.
+Use the tables to compare the same inputs before and after a code change.
+The results below are from one machine and apply to the recorded versions.
 
 Measured on 2026-11-09. [All result tables](results/results.md), [raw Python
 before](results/python-before.json)/[after](results/python-after.json), [raw R
 before](results/r-before.json)/[after](results/r-after.json), and
 [CSV](results/summary.csv) are checked in. Large inputs/outputs stay under ignored
-`benchmarks/work/`. Baseline source is commit `600dcba`; optimized source hashes
+`benchmarks/work/`. Baseline source is commit `600dcba`.
+optimized source hashes
 are recorded in the reports (Python 0.1.0a4, R adapter 0.1.2).
 
-## Observed results
+## Measured results
 
 | Case | Before | After | Tradeoff / scope |
 |---|---:|---:|---|
@@ -20,8 +25,8 @@ are recorded in the reports (Python 0.1.0a4, R adapter 0.1.2).
 
 Memory figures are defined below. Gains are not uniform: the small Python
 validation case did not speed up, Python export/import peaks barely changed,
-and R import at 10k had a slightly higher sampled peak. All figures, including
-those cases, are retained in the raw reports. These are descriptive observations
+And R import at 10k had a slightly higher sampled peak. All figures, including
+those cases, are kept in the raw reports. These are descriptive measurements
 from one machine, not universal speed or capacity guarantees.
 
 ## Workload and measurement
@@ -36,7 +41,8 @@ from one machine, not universal speed or capacity guarantees.
   repeated nullable text column. Embeddings are synthetic; PCA/UMAP analysis
   time is not part of conversion time.
 - Python and R use separate seeded generators and native numeric widths. Compare
-  before/after **within** each engine; their absolute timings are not a direct
+  before/after **within** each engine.
+their absolute timings are not a direct
   Python-vs-R language comparison.
 - Inputs are generated once, reused byte-for-byte, and their SHA-256 hashes are
   checked by the comparison script. Preparation and correctness checks occur
@@ -45,15 +51,18 @@ from one machine, not universal speed or capacity guarantees.
   while numeric values remain identical. Native R expression is double.
 - Each command runs in a fresh process, sequentially. Wall time includes startup,
   imports, input/output and the production validation gates. Python CLI workers
-  call the actual `scx.cli.main`; instrumentation adds small common overhead.
+  call the actual `scx.cli.main`.
+instrumentation adds small common overhead.
   BLAS/OpenMP limits are requested as one through threadpoolctl/environment
   settings; R's Python validator receives the same setup through a benchmark-only
   site hook. Verification showed OpenBLAS at one, while SciPy Matrix Market's
-  lazily loaded pool retained its default/automatic parallelism (PARALLELISM=0).
-  Matrix Market threads were not explicitly limited; this is not a universal
+  lazily loaded pool kept its default/automatic parallelism (PARALLELISM=0).
+  Matrix Market threads were not explicitly limited.
+This is not a universal
   single-core benchmark. The same setup is used before and after.
 - Python: two repeats per size/command, reported median time and largest peak.
-  With two repeats the median equals their mean; no outlier rejection or formal
+  With two repeats the median equals their mean.
+No outlier rejection or formal
   confidence interval is applied. Raw timing spread remains available.
 - R: one exploratory repeat per case. Memory is sampled every 10 ms as the sum
   of process-tree RSS, including R launcher/worker and the Python validator.
@@ -64,8 +73,9 @@ from one machine, not universal speed or capacity guarantees.
   R 4.5.2, SeuratObject 5.4.0, Matrix 1.7-4, jsonlite 2.0.0. Full hardware and
   Python versions are in [environment.json](results/environment.json); Python
   installation pins are in [python-requirements.txt](results/python-requirements.txt).
-  Disk type and OS cache state were not characterized or flushed. Inputs and
-  earlier outputs may be cached; background activity caused visible timing spread.
+  Disk type and OS cache state were not measured or flushed. Inputs and
+  earlier outputs may be cached.
+background activity caused visible timing spread.
 - Output bytes count regular files in SCX directories or the final H5AD/RDS.
   H5AD and RDS use uncompressed storage in this benchmark. Profiling is a separate
   run and is excluded from all timing tables. This is an in-memory reference
@@ -73,7 +83,7 @@ from one machine, not universal speed or capacity guarantees.
 
 ## Changes supported by measurements
 
-1. A validated import now checks and retains resources in one pass. At 10k cells,
+1. A validated import now checks and keeps resources in one pass. At 10k cells,
    the separate [profile](results/profile.json) shows matrix reads **6 -> 3**, TSV
    reads **12 -> 4**, and typed metadata decodes **4 -> 2**. There is no global cache,
    stale-file shortcut or skipped validation.
@@ -81,11 +91,13 @@ from one machine, not universal speed or capacity guarantees.
    of retaining counts/previous layers through the whole validation loop.
 3. Table output checks text without making a full numeric table/string-list copy.
    Python gzip defaults change from level 9 to 6. At 50k, SCX grows from 62.00 to
-   64.42 MiB; restored H5AD remains 136.19 MiB. This is a measured CPU/storage tradeoff.
+   64.42 MiB.
+restored H5AD remains 136.19 MiB. This is a measured CPU/storage tradeoff.
 4. R sparse finite/nonnegative checks inspect stored values. The old graph check
    could allocate a dense-sized CELL x CELL logical intermediate. At 50k its
    logical payload alone is about 10 GB, before other temporaries. The preliminary
-   baseline run was stopped before completion of that case; the retained baseline
+   baseline run was stopped before completion of that case.
+The kept baseline
    R report is a clean rerun at 1k/10k only. No OOM result or 50k baseline metric
    is fabricated. The improved 50k case completed with sparse checks.
 5. R metadata uses native vector numeric/logical formatting and encodes repeated
@@ -94,7 +106,7 @@ from one machine, not universal speed or capacity guarantees.
    Numeric formatting remains 17-digit and category/missing semantics are tested.
 
 Both Python before/after outputs were checked outside timing against input
-counts, normalized values, embeddings, graph, axes and exact typed metadata;
+Counts, normalized values, embeddings, graph, axes and exact typed metadata.
 all numeric errors were zero in this run. Reports are in
 [before verification](results/python-before-verification.json) and
 [after verification](results/python-after-verification.json). Each R run also
@@ -137,8 +149,8 @@ python benchmarks/summarize.py --baseline benchmarks/work/python-before/report.j
 ```
 
 Choose fresh output directories. Do not run competing benchmarks concurrently.
-`--cells`, `--genes`, `--per-cell`, `--seed`, and `--repeats` control workload size;
-changing them requires matching before/after inputs. Do not extend the old R
+`--cells`, `--genes`, `--per-cell`, `--seed`, and `--repeats` control workload size.
+changing them needs matching before/after inputs. Do not extend the old R
 baseline above 10k without removing its dense graph check or constraining memory.
 For diagnostic Python profiling, use a separate `run ... --profile` output:
 profiled reports are explicitly rejected by the timing summarizer.

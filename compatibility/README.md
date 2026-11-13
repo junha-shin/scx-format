@@ -1,21 +1,21 @@
 # Compatibility and support matrix
 
-The default [standalone scripts](../docs/install.md) require no SCX installation.
-They reuse the same Python/R adapters and metadata mappings. R standalone writes
-new outputs only and validates single-member gzip via base R + existing digest;
-Python retains reference safety. Dedicated Linux/Windows/macOS CI runs with SCX
-absent, tests corruption/partial copies, and checks both cross-language directions.
-Existing package/real-data reports below retain their original versions.
+The [one-file tools](../docs/install.md) need no SCX install.
+They use the same adapters and metadata mappings as the packages.
+R writes new outputs only and checks single-member gzip with base R and digest.
+Python uses the reference safety code.
+CI runs without SCX installed on Linux, Windows, and macOS.
+It checks damaged files, partial copies, and both conversion directions.
+The older reports below keep their recorded versions.
 
 
-Alpha.7 optional R adapter 0.1.6 provides [R-only validation and safe
-publication](../docs/r-only.md), independently of Python. The alpha.5 release
-contains R 0.1.3 and retains its original requirements.
+The optional R package supports [R-only checks and safe writes](../docs/r-only.md).
+Historical alpha.7 used R package 0.1.6. Alpha.5 used R 0.1.3 and still needs Python.
 
-This document defines the tested SCX v0.1-alpha / metadata-schema 1.0 profile.
-The Python package declares Python >= 3.10 and AnnData >= 0.11.4; that minimum
-does not imply every newer release and dependency combination has been tested.
-Exact environment constraints below are the reproducible supported test profiles.
+This page covers format 0.1-alpha and metadata schema 1.0.
+Minimum requirements include Python >=3.10 and AnnData >=0.11.4.
+Meeting a minimum does not mean every dependency combination was tested.
+The tables below list the tested environments.
 
 ## Versions and evidence
 
@@ -35,31 +35,25 @@ Exact environment constraints below are the reproducible supported test profiles
 | Seurat 3/4 runtime or SeuratObject < 5 | Not supported/tested; legacy **Assay class** support is tested under SeuratObject 5, not an old Seurat runtime |
 | Other AnnData/dependency versions | Not qualified by this matrix; no guarantee is inferred from an installation satisfying the minimum |
 
-`pbmc-anndata-*.json` are measured local reports for 2,700 cells x 13,714 genes.
-They include dependency versions, source RDS hashes, matrix errors, axis order,
-metadata checks and the reverse Seurat assay-class check. Both forms are exported
-from the same genuine PBMC3k Seurat analysis; conversion to legacy Assay first
-asserts that counts, normalized values and feature metadata have not changed.
-The original 10x archive provenance is in [the real-data example](../examples/seurat/README.md).
+The local pbmc-anndata-*.json reports cover 2700 cells x 13714 genes.
+They record versions, source RDS hashes, errors, axes, metadata, and reverse import checks.
+Both assay forms come from the same PBMC3k analysis.
+Before export, conversion to legacy Assay checks that counts, normalized values,
+and feature metadata are unchanged. See [the dataset source](../examples/seurat/README.md).
 
-CI has four Python environment jobs, three bridge jobs, a Windows safety job
-and a benchmark smoke job, two R-only jobs and three binary-distribution jobs.
-Default public writes preserve expression and typed metadata; embeddings/graphs
-require `analysis=True` / `analysis=TRUE` (CLI `--analysis`). Read scope and
-dtype safety are unchanged. Recorded PBMC3k reports predate the new wrapper API.
-Every bridge job
-tests both assay classes, H5AD serialization, CELL x FEATURE orientation on a
-nonsquare matrix, an asymmetric graph, dtype/missing/category preservation and
-AnnData -> SCX -> Seurat import into the requested assay class. Small fixtures run
-in CI; PBMC3k reports record the separate local real-data validation. CI uploads
-JUnit and per-environment JSON artifacts. Recorded success is evidence for the
-listed runs, not a performance or general biological correctness claim.
-The Python suite includes 125 cases per AnnData environment (two symlink cases
-may skip on Windows without link-creation privileges); R tests cover both assay
-classes plus native validation, corruption, rollback, races and hard interruption.
-Counts-only selection and dense/CSR/CSC
-Python input are included. Safety cases cover failed writes, interrupted processes,
-writer races, rollback and corrupt transport; see [safe I/O](../docs/safe-io.md).
+CI tests four Python environments, three Seurat bridges, Windows safety,
+benchmarks, two R-only environments, three binary builds, and three standalone environments.
+Default writes keep expression and metadata. Add analysis=True / analysis=TRUE
+(CLI: --analysis) for embeddings and graphs.
+Each bridge checks both assay classes, H5AD, non-square axes, directed graphs,
+types, missing values, categories, and reverse import.
+Small fixtures run in CI. The listed PBMC3k analysis reports are separate local runs.
+CI also runs the raw PBMC3k quickstarts without rerunning biological analysis.
+Reports are evidence for those runs, not general speed or biological accuracy claims.
+The Python suite has 125 cases; two symlink cases may skip on Windows.
+R tests cover both assay classes, validation, corruption, rollback, races, and hard stops.
+Counts-only and dense/CSR/CSC Python input are tested.
+See [safe writes](../docs/safe-io.md).
 
 ## Dtype support
 
@@ -72,16 +66,15 @@ writer races, rollback and corrupt transport; see [safe I/O](../docs/safe-io.md)
 | categorical | Values, category dtype, order and unused categories preserved | factor/ordered factor -> character-category schema | character categories -> factor; numeric/boolean category labels rejected |
 | datetime, complex, bytes, arbitrary/mixed objects | Unsupported metadata types; export rejected | Date/POSIXt, list, custom numeric/bit64 classes rejected | Unknown or nonrepresentable schema types rejected |
 
-H5AD is a separate transport constraint: AnnData 0.11/0.12 cannot serialize an
-object column with missing strings directly. The CLI stores missing text using
-the native H5AD nullable-string encoding, enables the AnnData setting only within
-the write, and warns about the storage dtype conversion. Values and missing masks
-are preserved; pandas object/str storage may become pandas `string` after H5AD.
-No numeric-to-string conversion or string-to-categorical conversion is applied.
-In-memory SCX import retains the declared logical schema dtype. H5AD readers may
-also infer a different string storage dtype for category labels, while retaining
-category values/order. NaN payload bits and distinct Python missing sentinels are
-not part of the schema.
+H5AD has its own limits. AnnData 0.11/0.12 cannot directly save object columns
+with missing strings. The CLI writes them with nullable-string encoding and warns.
+The AnnData setting is changed only for that write.
+Values and missing masks stay intact, but object/str storage may become pandas string.
+Numbers are not changed to strings; strings are not changed to categories.
+In-memory SCX reads keep the declared logical type.
+H5AD readers may infer another string storage type for category labels.
+Category values and order remain intact. NaN payload bits and Python-specific
+missing sentinels are outside the schema.
 
 ## Exchanged and omitted data
 
@@ -116,7 +109,7 @@ not part of the schema.
 
 ## Reproduce and extend the matrix
 
-Run from the repository root with R dependencies from the adapter README:
+Run from the repo root with the R dependencies listed in the adapter guide:
 
 ```sh
 pip install -e '.[test]' -r compatibility/anndata-0.11.4.txt
@@ -125,18 +118,18 @@ Rscript adapters/seurat/scripts/compat-fixtures.R .r-tests/fixtures
 python scripts/check_compatibility.py --fixtures .r-tests/fixtures --output .compat-results/0.11.4
 ```
 
-Use separate environments and fresh output directories for each constraints
-file. For the real-data matrix, first run the Seurat PBMC3k example, then:
+Use a separate environment and new output folder for each constraints file.
+For real data, run the Seurat PBMC3k example first, then:
 
 ```sh
 Rscript adapters/seurat/scripts/compat-fixtures.R .r-tests/pbmc-fixtures examples/seurat/output/source.rds
 python scripts/check_compatibility.py --fixtures .r-tests/pbmc-fixtures --output .compat-results/pbmc-0.11.4 --dataset PBMC3k
 ```
 
-Repeat the Python command under each pinned environment. The R fixtures are
-immutable inputs; each run copies them to a fresh output. Changing dependencies
-requires a new report and CI check before expanding this table's claims.
+Repeat the Python command in each fixed environment.
+Each run copies the R fixtures to a new output folder.
+Before adding supported versions, record new results and pass CI.
 
-`to_tsv` uses the same input validation/dtype rules and exports expression only.
-See [the TSV guide](../docs/tsv-export.md) for Python single-row densification, R sparse text rows, sparse
-input memory, subset semantics and protected file publication.
+to_tsv checks the same input and type rules. It exports expression only.
+See [TSV options](../docs/tsv-export.md) for row buffers, sparse input memory,
+subsets, and safe writes.
