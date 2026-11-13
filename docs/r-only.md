@@ -1,6 +1,6 @@
 # Seurat ↔ SCX without Python
 
-R adapter **scxSeurat 0.1.6** performs export, validation, safe publication
+R adapter **scxSeurat 0.1.7** performs export, validation, safe publication
 and import entirely in R plus its registered native helpers. No Python process,
 reticulate, NumPy, pandas, SciPy or AnnData installation is required. Python is
 needed separately for AnnData/H5AD conversions.
@@ -14,9 +14,9 @@ existing release assets and tags have not been replaced.
 In your existing R environment:
 
 ```r
-source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0-alpha.7/install.R")
+source("https://raw.githubusercontent.com/junha-shin/scx-format/v0.1.0/install.R")
 library(scxSeurat)
-packageVersion("scxSeurat")  # 0.1.6
+packageVersion("scxSeurat")  # 0.1.7
 ```
 
 See [installation and binary coverage](install.md). To build from a checkout, use
@@ -27,7 +27,7 @@ reused. Source installation requires a C toolchain and zlib development files:
 Windows Rtools matching R (Rtools45 for R 4.5); Linux build tools and zlib headers;
 macOS command-line developer tools and zlib. Those tools build the R package;
 they are not Python dependencies. Windows R-only CI also creates an R 4.5 binary
-ZIP in its artifact; the release uses a platform-labelled ZIP, installable with `install.packages("scxSeurat_0.1.6-windows-x86_64.zip",
+ZIP in its artifact; the release uses a platform-labelled ZIP, installable with `install.packages("scxSeurat_0.1.7-windows-x86_64.zip",
 repos = NULL, type = "win.binary")` in a compatible Windows R environment.
 
 Use `library(scxSeurat)` after installation. Development `source("adapters/seurat/R/scx.R")`
