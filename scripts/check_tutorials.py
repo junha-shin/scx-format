@@ -32,7 +32,7 @@ def python_lesson(output: Path):
     os.environ["JUPYTER_PATH"] = str(kernel_root) + os.pathsep + os.environ.get("JUPYTER_PATH", "")
     os.environ["JUPYTER_RUNTIME_DIR"] = str(output / "runtime")
     os.environ["IPYTHONDIR"] = str(output / "ipython")
-    notebook = nbformat.read(ROOT / "tutorials/quickstart.ipynb", as_version=4)
+    notebook = nbformat.read(ROOT / "tutorials/detailed.ipynb", as_version=4)
     nbformat.validate(notebook)
     client = NotebookClient(notebook, timeout=180, kernel_name="scx-tutorial-test",
                             resources={"metadata": {"path": str(work)}})
@@ -123,12 +123,67 @@ report <- c(env$tutorial_result,list(offline_rerun=TRUE,prior_outputs_preserved=
 jsonlite::write_json(report,args[2],auto_unbox=TRUE,pretty=TRUE)
 ''', encoding="utf-8")
     result = subprocess.run([rscript, "--vanilla", str(wrapper),
-                             str(ROOT / "tutorials/quickstart.R"), str(output / "r-report.json")],
+                             str(ROOT / "tutorials/detailed.R"), str(output / "r-report.json")],
                             cwd=work, capture_output=True, text=True, encoding="utf-8", errors="replace")
     (output / "r-console.txt").write_text(result.stdout + result.stderr, encoding="utf-8")
     if result.returncode:
         raise RuntimeError(result.stdout + result.stderr)
     return json.loads((output / "r-report.json").read_text(encoding="utf-8"))
+
+
+def quick_lessons(output: Path, rscript: str):
+    import shutil
+    import pandas as pd
+    for language, filename in (("python", "scx.py"), ("r", "scx.R")):
+        work = output / ("quick-" + language)
+        work.mkdir()
+        shutil.copyfile(output / language / "scx-tutorial/files" / filename, work / filename)
+    work = output / "quick-python"
+    notebook = nbformat.read(ROOT / "tutorials/quickstart.ipynb", as_version=4)
+    nbformat.validate(notebook)
+    notebook.cells.append(nbformat.v4.new_code_cell("""
+from pathlib import Path
+import hashlib
+assert Path(scx.__file__).resolve() == Path('scx.py').resolve()
+np.testing.assert_array_equal(restored.layers['counts'].toarray(), counts.toarray())
+np.testing.assert_allclose(restored.X.toarray(), adata.X.toarray(), rtol=0, atol=1e-12)
+original = hashlib.sha256(Path('counts.tsv').read_bytes()).hexdigest()
+try:
+    scx.to_tsv('example.scx', 'counts.tsv')
+except FileExistsError:
+    pass
+else:
+    raise AssertionError('Expected overwrite refusal')
+assert hashlib.sha256(Path('counts.tsv').read_bytes()).hexdigest() == original
+"""))
+    NotebookClient(notebook, timeout=180, kernel_name="scx-tutorial-test",
+                   resources={"metadata": {"path": str(work)}}).execute()
+    notebook.cells.pop()
+    for cell in notebook.cells:
+        cell.metadata.pop("execution", None)
+    nbformat.write(notebook, output / "quickstart-executed.ipynb")
+    wrapper = output / "check-quick.R"
+    wrapper.write_text('''args <- commandArgs(TRUE)
+source(args[1])
+stopifnot(max(abs(SeuratObject::LayerData(restored,layer="counts")-counts))==0,
+  max(abs(SeuratObject::LayerData(restored,layer="data")-log1p(counts)))<=1e-12)
+previous <- digest::digest("counts.tsv",file=TRUE,algo="sha256")
+refusal <- tryCatch({to_tsv("example.scx","counts.tsv");NULL},error=conditionMessage)
+stopifnot(!is.null(refusal),grepl("already exists",refusal,fixed=TRUE),
+  previous==digest::digest("counts.tsv",file=TRUE,algo="sha256"))
+''', encoding="utf-8")
+    result = subprocess.run([rscript, "--vanilla", str(wrapper), str(ROOT / "tutorials/quickstart.R")],
+                            cwd=output / "quick-r", capture_output=True, text=True,
+                            encoding="utf-8", errors="replace")
+    (output / "quick-r-console.txt").write_text(result.stdout + result.stderr, encoding="utf-8")
+    if result.returncode:
+        raise RuntimeError(result.stdout + result.stderr)
+    expected = [[1, 0, 3], [0, 2, 1]]
+    for language in ("python", "r"):
+        table = pd.read_csv(output / ("quick-" + language) / "counts.tsv", sep="\t", index_col=0)
+        assert table.values.tolist() == expected
+    return {"passed": True, "counts_and_normalized_roundtrip": True,
+            "TSV_values_equal": True, "overwrite_protection": True}
 
 
 def main():
@@ -155,7 +210,7 @@ def main():
         p = pd.read_csv(p_run / name, sep="\t", index_col=0)
         r_frame = pd.read_csv(r_run / name, sep="\t", index_col=0)
         pd.testing.assert_frame_equal(p, r_frame, check_exact=False, atol=1e-12, rtol=0)
-    report = {"passed": True, "cross_language_TSV_equal": True, "python": python, "R": r}
+    report = {"passed": True, "cross_language_TSV_equal": True, "python": python, "R": r, "quickstart": quick_lessons(output, args.rscript)}
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     if args.save_executed:
         args.save_executed.write_bytes((output / "executed.ipynb").read_bytes())

@@ -39,7 +39,7 @@ jobs:
           SCX_REQUIRE_UNINSTALLED=1 SCX_SCRIPT=.compat-results/standalone-release/scx.R Rscript scripts/check_standalone.R .compat-results/standalone-r .compat-results/standalone-python
       - run: python scripts/check_standalone_bridge.py .compat-results/standalone-r .compat-results/standalone-release/scx.py
       - run: python scripts/stage_standalone_release.py .compat-results/standalone-release --verify
-      - name: Execute Python and R tutorials, including offline reruns
+      - name: Execute quickstart and detailed Python/R tutorials
         run: |
           pip install -r tutorials/requirements-test.txt
           python scripts/check_tutorials.py --output .compat-results/tutorials
@@ -57,7 +57,7 @@ jobs:
             .compat-results/standalone-r/report.json
             .compat-results/standalone-r/bridge-report.json
             .compat-results/tutorials/report.json
-            .compat-results/tutorials/executed.ipynb
+            .compat-results/tutorials/*executed.ipynb
             .compat-results/tutorials/r-console.txt
             .compat-results/tsv-benchmark/run/report.json
             .compat-results/tsv-benchmark/run/summary.md

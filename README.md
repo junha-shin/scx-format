@@ -1,7 +1,7 @@
-# SCX — Single Cell eXchange
+# SCX â€” Single Cell eXchange
 
 Move one scRNA-seq assay between Seurat and AnnData using an inspectable directory.
-Expression matrices always use **CELL × FEATURE** orientation.
+Expression matrices always use **CELL Ã— FEATURE** orientation.
 
 ## Start here: a five-minute lesson
 
@@ -9,19 +9,18 @@ Expression matrices always use **CELL × FEATURE** orientation.
 
 | Environment | Open and run | What you will see |
 |---|---|---|
-| Python / Scanpy | [quickstart.ipynb](tutorials/quickstart.ipynb) — download, choose your analysis kernel, Restart & Run All | Executed tables and checks beside each step |
-| R / Seurat | [quickstart.R](tutorials/quickstart.R) — open in RStudio and run numbered sections, or source the file | The same data and checks; no Python or IRkernel |
+| Python / Scanpy | [quickstart.ipynb](tutorials/quickstart.ipynb) â€” download, choose your analysis kernel, Restart & Run All | Save/read SCX and export TSV |
+| R / Seurat | [quickstart.R](tutorials/quickstart.R) â€” open in RStudio and run numbered sections, or source the file | Save/read SCX and export TSV; no Python needed |
 
-Both lessons verify pinned alpha.7 downloads, generate a tiny example, write/read
-SCX, check typed metadata, export TSV/gzip and ordered subsets, and demonstrate
-overwrite protection. Each full rerun creates fresh outputs and preserves old
-runs. [Download instructions, expected results and recovery](tutorials/README.md).
+The quickstarts show only the essential utilities with tiny example data.
+[Detailed lessons](tutorials/README.md#detailed-walkthrough) cover verified downloads,
+metadata, additional options and recovery.
 
 ## Use v0.1.0-alpha.7 in your existing environment
 
 Download [scx.py](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.py) or [scx.R](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/scx.R)
 and [SHA256SUMS](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/SHA256SUMS). Verify the file's checksum before import/source.
-[Offline usage guide](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/USAGE.md) · [release notes](docs/releases/v0.1.0-alpha.7.md).
+[Offline usage guide](https://github.com/junha-shin/scx-format/releases/download/v0.1.0-alpha.7/USAGE.md) Â· [release notes](docs/releases/v0.1.0-alpha.7.md).
 These URLs are pinned to this release; previous alpha assets are unchanged.
 
 ## Read and write
@@ -69,7 +68,7 @@ languages: `to_tsv(path, output, matrix="counts", cells=..., features=...)`
 are supported. Output buffers are limited to one row; R renders directly from
 sparse rows, and Python densifies only one row. Existing files are always protected. See [TSV export and memory limits](docs/tsv-export.md).
 
-- [Usage and Seurat ↔ AnnData examples](docs/getting-started.md)
+- [Usage and Seurat â†” AnnData examples](docs/getting-started.md)
 - [Support, dtype limits and errors](compatibility/README.md)
 - [Format](specification/SCX-v0.1.md) and [metadata schema](specification/metadata-schema-v1.md)
 - [Reproducible release-file verification](docs/release-verification.md)

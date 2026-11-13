@@ -1,3 +1,16 @@
+# Quickstart
+
+Start with [Python notebook](quickstart.ipynb) or [R script](quickstart.R).
+Download the matching SCX file, create the tiny example (or use your existing object),
+then save/read SCX and export TSV. No SCX package installation is needed.
+
+## Detailed walkthrough
+
+The previous full lessons are preserved as [detailed.ipynb](detailed.ipynb) and
+[detailed.R](detailed.R). They cover verified downloads, typed metadata, normalized
+TSV, subsets, offline reruns and recovery. The instructions below describe these
+**detailed** lessons.
+
 # SCX in five minutes
 
 Choose **one** lesson for the environment you already use. Neither lesson
@@ -6,10 +19,10 @@ you do not need to clone this repository.
 
 | You use | Download | Run |
 |---|---|---|
-| Scanpy / AnnData | [quickstart.ipynb](https://raw.githubusercontent.com/junha-shin/scx-format/main/tutorials/quickstart.ipynb) (save as `.ipynb`) | Open in your existing Jupyter environment; select your Scanpy kernel, then **Restart Kernel and Run All Cells** |
-| Seurat | [quickstart.R](https://raw.githubusercontent.com/junha-shin/scx-format/main/tutorials/quickstart.R) (save as `.R`) | Open in RStudio; select a numbered section and Ctrl/Cmd+Enter, or run `source("quickstart.R")` |
+| Scanpy / AnnData | [detailed.ipynb](https://raw.githubusercontent.com/junha-shin/scx-format/main/tutorials/detailed.ipynb) (save as `.ipynb`) | Open in your existing Jupyter environment; select your Scanpy kernel, then **Restart Kernel and Run All Cells** |
+| Seurat | [detailed.R](https://raw.githubusercontent.com/junha-shin/scx-format/main/tutorials/detailed.R) (save as `.R`) | Open in RStudio; select a numbered section and Ctrl/Cmd+Enter, or run `source("detailed.R")` |
 
-The [notebook preview](quickstart.ipynb) includes executed results; you can read
+The [notebook preview](detailed.ipynb) includes executed results; you can read
 it on GitHub before downloading. R uses an ordinary script so that you do not
 need Jupyter, IRkernel or Python. The notebook assumes that you already have
 Jupyter for your Python environment; a plain-script reference remains available
@@ -39,7 +52,7 @@ The counts table in both languages is:
 | cell2 | 0 | 2 | 0 | 4 |
 | cell3 | 5 | 1 | 0 | 0 |
 
-SCX and TSV are **CELL × FEATURE**. Seurat's in-memory matrix is FEATURE × CELL;
+SCX and TSV are **CELL Ã— FEATURE**. Seurat's in-memory matrix is FEATURE Ã— CELL;
 the R adapter handles that transpose. Seurat also adds QC metadata, so the two
 objects' complete metadata tables are not expected to be identical across languages.
 The lessons check exact metadata round-trip within each environment.
@@ -95,7 +108,7 @@ Dense TSV can be very large: use subsets and gzip; do not densify real input
 matrices for display. TSV is an expression table, not a metadata-preserving
 replacement for SCX.
 
-- [Seurat ↔ AnnData conversion recipes](../docs/getting-started.md)
+- [Seurat â†” AnnData conversion recipes](../docs/getting-started.md)
 - [Real PBMC3k lesson and validation](../examples/pbmc3k/README.md)
 - [PBMC3k R/Python TSV correctness and performance](../examples/tsv-pbmc3k/README.md)
 - [TSV memory and format limits](../docs/tsv-export.md)
@@ -116,7 +129,7 @@ python scripts/check_tutorials.py --output .compat-results/tutorials
 ```
 
 These are development-only execution tools, not SCX dependencies. Use a **new**
-output path each time. The runner uses a private kernel configuration, executes
+output path each time. The runner also executes both minimal quickstarts and checks their round-trip, TSV values and overwrite protection. It uses a private kernel configuration and executes
 both lessons twice, forbids network on the second run, checks prior outputs and
 damaged-cache rejection, and compares actual R/Python TSV values and ID order.
 Reports and the executed notebook are saved under the output path. CI repeats
